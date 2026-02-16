@@ -11,6 +11,13 @@
 			<Setter Property="Height" Value="32" />
 		</Style>
 	</Window.Resources>
+	<Window.CommandBindings>
+		<CommandBinding Command="New" Executed="NewCommandBinding_Executed" />
+		<CommandBinding Command="Open" Executed="OpenCommandBinding_Executed" />
+		<CommandBinding Command="Save" Executed="SaveCommandBinding_Executed" />
+		<CommandBinding Command="SaveAs" Executed="SaveAsCommandBinding_Executed" />
+		<CommandBinding Command="Close" Executed="CloseCommandBinding_Executed" />
+	</Window.CommandBindings>
 	<Grid>
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto"></RowDefinition>
@@ -22,39 +29,39 @@
 		</Grid.ColumnDefinitions>
 		<Menu Grid.Row="0">
 			<MenuItem Header="Файл">
-				<MenuItem Header="Создать" Command="New"></MenuItem>
-				<MenuItem Header="Открыть" Command="Open"></MenuItem>
-				<MenuItem Header="Сохранить" Command="Save"></MenuItem>
-				<MenuItem Header="Сохранить как" Command="SaveAs"></MenuItem>
-				<MenuItem Header="Выход"></MenuItem>
+				<MenuItem Header="Создать" Command="New" />
+				<MenuItem Header="Открыть" Command="Open" />
+				<MenuItem Header="Сохранить" Command="Save" />
+				<MenuItem Header="Сохранить как" Command="SaveAs" />
+				<MenuItem Header="Выход" Command="Close" />
 			</MenuItem>
 			<MenuItem Header="Правка">
-				<MenuItem Header="Отменить" Command="Undo"></MenuItem>
-				<MenuItem Header="Повторить" Command="Redo"></MenuItem>
-				<MenuItem Header="Вырезать" Command="Cut"></MenuItem>
-				<MenuItem Header="Копировать" Command="Copy"></MenuItem>
-				<MenuItem Header="Вставить" Command="Paste"></MenuItem>
-				<MenuItem Header="Удалить" Command="Delete"></MenuItem>
-				<MenuItem Header="Выделить все" Command="SelectAll"></MenuItem>
+				<MenuItem Header="Отменить" Command="Undo" />
+				<MenuItem Header="Повторить" Command="Redo" />
+				<MenuItem Header="Вырезать" Command="Cut" />
+				<MenuItem Header="Копировать" Command="Copy" />
+				<MenuItem Header="Вставить" Command="Paste" />
+				<MenuItem Header="Удалить" Command="Delete" />
+				<MenuItem Header="Выделить все" Command="SelectAll" />
 			</MenuItem>
 			<MenuItem Header="Текст">
-				<MenuItem Header="Постановка задачи"></MenuItem>
-				<MenuItem Header="Грамматика"></MenuItem>
-				<MenuItem Header="Классификация грамматики"></MenuItem>
-				<MenuItem Header="Метод анализа"></MenuItem>
-				<MenuItem Header="Тестовый пример"></MenuItem>
-				<MenuItem Header="Список литературы"></MenuItem>
-				<MenuItem Header="Исходный код программы"></MenuItem>
+				<MenuItem Header="Постановка задачи" />
+				<MenuItem Header="Грамматика" />
+				<MenuItem Header="Классификация грамматики" />
+				<MenuItem Header="Метод анализа" />
+				<MenuItem Header="Тестовый пример" />
+				<MenuItem Header="Список литературы" />
+				<MenuItem Header="Исходный код программы" />
 			</MenuItem>
-			<MenuItem Header="Пуск"></MenuItem>
+			<MenuItem Header="Пуск" />
 			<MenuItem Header="Справка">
-				<MenuItem Header="Вызов справки" Command="Help"></MenuItem>
-				<MenuItem Header="О программе"></MenuItem>
+				<MenuItem Header="Вызов справки" Command="Help" />
+				<MenuItem Header="О программе" />
 			</MenuItem>
 		</Menu>
 		<ToolBar Grid.Row="1">
 			<Button ToolTip="Создать" Command="New">
-				<Image Source="/Assets/file.png"/>
+				<Image Source="/Assets/file.png" />
 			</Button>
 			<Button ToolTip="Открыть" Command="Open">
 				<Image Source="/Assets/folder.png" />
@@ -89,7 +96,7 @@
 				<Image Source="/Assets/information.png" />
 			</Button>
 		</ToolBar>
-		<RichTextBox Grid.Row="2" Margin="5" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+		<RichTextBox x:Name="rtb" Grid.Row="2" Margin="5" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
 
 		</RichTextBox>
 		<DataGrid Grid.Row="3" Margin="5">
