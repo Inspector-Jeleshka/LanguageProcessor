@@ -17,6 +17,7 @@
 		<CommandBinding Command="Save" Executed="SaveCommandBinding_Executed" />
 		<CommandBinding Command="SaveAs" Executed="SaveAsCommandBinding_Executed" />
 		<CommandBinding Command="Close" Executed="CloseCommandBinding_Executed" />
+		<CommandBinding Command="Help" Executed="HelpCommandBinding_Executed" />
 	</Window.CommandBindings>
 	<Grid>
 		<Grid.RowDefinitions>
