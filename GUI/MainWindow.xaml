@@ -18,6 +18,7 @@
 		<CommandBinding Command="SaveAs" Executed="SaveAsCommandBinding_Executed" />
 		<CommandBinding Command="Close" Executed="CloseCommandBinding_Executed" />
 		<CommandBinding Command="Help" Executed="HelpCommandBinding_Executed" />
+		<CommandBinding Command="{x:Static local:CustomCommands.ShowAbout}" Executed="ShowAboutCommandBinding_Executed" />
 	</Window.CommandBindings>
 	<Grid>
 		<Grid.RowDefinitions>
@@ -57,7 +58,7 @@
 			<MenuItem Header="Пуск" />
 			<MenuItem Header="Справка">
 				<MenuItem Header="Вызов справки" Command="Help" />
-				<MenuItem Header="О программе" />
+				<MenuItem Header="О программе" Command="{x:Static local:CustomCommands.ShowAbout}" />
 			</MenuItem>
 		</Menu>
 		<ToolBar Grid.Row="1">
@@ -93,7 +94,7 @@
 			<Button ToolTip="Вызов справки" Command="Help">
 				<Image Source="/Assets/question.png" />
 			</Button>
-			<Button ToolTip="О программе">
+			<Button ToolTip="О программе" Command="{x:Static local:CustomCommands.ShowAbout}">
 				<Image Source="/Assets/information.png" />
 			</Button>
 		</ToolBar>

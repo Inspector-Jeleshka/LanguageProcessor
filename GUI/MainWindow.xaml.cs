@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -19,6 +20,7 @@ namespace GUI;
 public partial class MainWindow : Window
 {
 	private FileStream? _openFile;
+	private AboutWindow? _openedAboutWindow;
 	private FileStream? OpenFile
 	{
 		get => _openFile;
@@ -145,5 +147,15 @@ public partial class MainWindow : Window
 			""";
 
 		MessageBox.Show(helpContent, "Справка", MessageBoxButton.OK, MessageBoxImage.Information);
+	}
+	private void ShowAboutCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
+	{
+		if (_openedAboutWindow is null)
+		{
+			_openedAboutWindow = new AboutWindow();
+			_openedAboutWindow.Closed += (_, _) => _openedAboutWindow = null;
+			_openedAboutWindow.Show();
+		}
+		_openedAboutWindow.Focus();
 	}
 }

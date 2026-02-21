@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Assets\compiler.png" />
     <None Remove="Assets\copy.png" />
     <None Remove="Assets\cut.png" />
     <None Remove="Assets\file.png" />
@@ -22,6 +23,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="Assets\compiler.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
     <Resource Include="Assets\copy.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
