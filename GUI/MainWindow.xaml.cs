@@ -47,7 +47,7 @@ public partial class MainWindow : Window
 		// Saving
 		if (e.Command == ApplicationCommands.Save && OpenFile is not null)
 		{
-			WriteFile();
+			WriteOpenFile();
 			return;
 		}
 		else if (e.Command == ApplicationCommands.SaveAs || e.Command == ApplicationCommands.Save)
@@ -60,7 +60,7 @@ public partial class MainWindow : Window
 			OpenFile = null;
 			OpenFile = File.Open(dialog.FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
 
-			WriteFile();
+			WriteOpenFile();
 			return;
 		}
 
@@ -87,7 +87,7 @@ public partial class MainWindow : Window
 					OpenFile = File.Open(dialog.FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
 				}
 
-				WriteFile();
+				WriteOpenFile();
 			}
 		}
 
@@ -100,15 +100,23 @@ public partial class MainWindow : Window
 		}
 		else if (e.Command == ApplicationCommands.Open)
 		{
-			var dialog = new OpenFileDialog();
-			var result = dialog.ShowDialog() ?? false;
-			if (!result)
-				return;
+			try
+			{
+				var dialog = new OpenFileDialog();
+				var result = dialog.ShowDialog() ?? false;
+				if (!result)
+					return;
 
-			OpenFile = null;
-			OpenFile = File.Open(dialog.FileName, FileMode.Open, FileAccess.ReadWrite);
+				OpenFile = null;
+				OpenFile = File.Open(dialog.FileName, FileMode.Open, FileAccess.ReadWrite);
 
-			ReadFile();
+				ReadOpenFile();
+			}
+			catch (UnauthorizedAccessException)
+			{
+				_ = MessageBox.Show("Ошибка: указанный файл доступен только для чтения", "Ошибка", 
+					MessageBoxButton.OK, MessageBoxImage.Error);
+			}
 		}
 		else if (e.Command == ApplicationCommands.Close)
 		{
@@ -153,7 +161,7 @@ public partial class MainWindow : Window
 		}
 		_ = _openAboutWindow.Focus();
 	}
-	private void ReadFile()
+	private void ReadOpenFile()
 	{
 		if (OpenFile is null)
 			throw new InvalidOperationException($"{nameof(OpenFile)} cannot be null");
@@ -166,7 +174,7 @@ public partial class MainWindow : Window
 		{ Text = content };
 		_savedContent = content;
 	}
-	private void WriteFile()
+	private void WriteOpenFile()
 	{
 		if (OpenFile is null)
 			throw new InvalidOperationException($"{nameof(OpenFile)} cannot be null");
