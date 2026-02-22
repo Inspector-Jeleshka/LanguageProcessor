@@ -21,6 +21,7 @@ public partial class MainWindow : Window
 {
 	private FileStream? _openFile;
 	private AboutWindow? _openAboutWindow;
+	private string _savedContent = string.Empty;
 	private FileStream? OpenFile
 	{
 		get => _openFile;
@@ -41,88 +42,79 @@ public partial class MainWindow : Window
 		OpenFile = null;
 		_openAboutWindow?.Close();
 	}
-	private void NewCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
+	private void FileCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
 	{
-		if (OpenFile is not null)
+		// Saving
+		if (e.Command == ApplicationCommands.Save && OpenFile is not null)
 		{
-			var result = MessageBox.Show("Сохранить изменения в текущем файле?", "Сохранение",
-				MessageBoxButton.YesNoCancel);
-
-			if (result == MessageBoxResult.Cancel)
+			WriteFile();
+			return;
+		}
+		else if (e.Command == ApplicationCommands.SaveAs || e.Command == ApplicationCommands.Save)
+		{
+			var dialog = new SaveFileDialog();
+			var result = dialog.ShowDialog() ?? false;
+			if (!result)
 				return;
 
-			if (result == MessageBoxResult.Yes)
-			{
-				var dialog = new SaveFileDialog();
-				var saveResult = dialog.ShowDialog() ?? false;
-				if (!saveResult)
-					return;
+			OpenFile = null;
+			OpenFile = File.Open(dialog.FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
 
-				var file = File.OpenWrite(dialog.FileName);
-				using var writer = new StreamWriter(file);
-				var content = new TextRange(rtb.Document.ContentStart, rtb.Document.ContentEnd).Text;
-				writer.Write(content);
+			WriteFile();
+			return;
+		}
+
+		// SaveChanges
+		var content = new TextRange(rtb.Document.ContentStart, rtb.Document.ContentEnd).Text;
+		if (content != _savedContent)
+		{
+			var saveChanges = MessageBox.Show("Сохранить текущие изменения в файл?", "Сохранение",
+				MessageBoxButton.YesNoCancel);
+
+			if (saveChanges == MessageBoxResult.Cancel)
+				return;
+			else if (saveChanges == MessageBoxResult.Yes)
+			{
+				if (OpenFile is null)
+				{
+					// SaveAs
+					var dialog = new SaveFileDialog();
+					var result = dialog.ShowDialog() ?? false;
+					if (!result)
+						return;
+
+					OpenFile = null;
+					OpenFile = File.Open(dialog.FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+				}
+
+				WriteFile();
 			}
 		}
 
-		OpenFile = null;
-		_ = new TextRange(rtb.Document.ContentStart, rtb.Document.ContentEnd)
-		{ Text = string.Empty };
-	}
-	private void OpenCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
-	{
-		var dialog = new OpenFileDialog();
-		var result = dialog.ShowDialog() ?? false;
-		if (!result)
-			return;
-
-		OpenFile = null;
-		OpenFile = File.Open(dialog.FileName, FileMode.Open, FileAccess.ReadWrite);
-
-		using var reader = new StreamReader(OpenFile, leaveOpen: true);
-		var content = reader.ReadToEnd();
-
-		_ = new TextRange(rtb.Document.ContentStart, rtb.Document.ContentEnd)
-		{ Text = content };
-	}
-	private void SaveCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
-	{
-		if (OpenFile is null)
+		if (e.Command == ApplicationCommands.New)
+		{
+			OpenFile = null;
+			_ = new TextRange(rtb.Document.ContentStart, rtb.Document.ContentEnd)
+			{ Text = string.Empty };
+			_savedContent = string.Empty;
+		}
+		else if (e.Command == ApplicationCommands.Open)
 		{
 			var dialog = new OpenFileDialog();
 			var result = dialog.ShowDialog() ?? false;
 			if (!result)
 				return;
 
-			OpenFile = File.Open(dialog.FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+			OpenFile = null;
+			OpenFile = File.Open(dialog.FileName, FileMode.Open, FileAccess.ReadWrite);
+
+			ReadFile();
 		}
-
-		OpenFile.Position = 0;
-		using var writer = new StreamWriter(OpenFile, leaveOpen: true)
-		{ AutoFlush = true };
-
-		var content = new TextRange(rtb.Document.ContentStart, rtb.Document.ContentEnd).Text;
-		writer.Write(content);
-		OpenFile.SetLength(OpenFile.Position);
+		else if (e.Command == ApplicationCommands.Close)
+		{
+			Close();
+		}
 	}
-	private void SaveAsCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
-	{
-		var dialog = new SaveFileDialog();
-		var result = dialog.ShowDialog() ?? false;
-		if (!result)
-			return;
-
-		OpenFile = null;
-		OpenFile = File.Open(dialog.FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-		OpenFile.Position = 0;
-		using var writer = new StreamWriter(OpenFile, leaveOpen: true)
-		{ AutoFlush = true };
-
-		var content = new TextRange(rtb.Document.ContentStart, rtb.Document.ContentEnd).Text;
-		writer.Write(content);
-		OpenFile.SetLength(OpenFile.Position);
-	}
-	private void CloseCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e) => Close();
 	private void HelpCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
 	{
 		var helpContent = """
@@ -160,5 +152,32 @@ public partial class MainWindow : Window
 			return;
 		}
 		_ = _openAboutWindow.Focus();
+	}
+	private void ReadFile()
+	{
+		if (OpenFile is null)
+			throw new InvalidOperationException($"{nameof(OpenFile)} cannot be null");
+
+		OpenFile.Position = 0;
+		using var reader = new StreamReader(OpenFile, leaveOpen: true);
+
+		var content = reader.ReadToEnd();
+		_ = new TextRange(rtb.Document.ContentStart, rtb.Document.ContentEnd)
+		{ Text = content };
+		_savedContent = content;
+	}
+	private void WriteFile()
+	{
+		if (OpenFile is null)
+			throw new InvalidOperationException($"{nameof(OpenFile)} cannot be null");
+
+		OpenFile.Position = 0;
+		using var writer = new StreamWriter(OpenFile, leaveOpen: true)
+		{ AutoFlush = true };
+
+		var content = new TextRange(rtb.Document.ContentStart, rtb.Document.ContentEnd).Text;
+		writer.Write(content);
+		OpenFile.SetLength(OpenFile.Position);
+		_savedContent = content;
 	}
 }

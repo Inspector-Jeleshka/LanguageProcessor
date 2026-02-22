@@ -12,11 +12,11 @@
 		</Style>
 	</Window.Resources>
 	<Window.CommandBindings>
-		<CommandBinding Command="New" Executed="NewCommandBinding_Executed" />
-		<CommandBinding Command="Open" Executed="OpenCommandBinding_Executed" />
-		<CommandBinding Command="Save" Executed="SaveCommandBinding_Executed" />
-		<CommandBinding Command="SaveAs" Executed="SaveAsCommandBinding_Executed" />
-		<CommandBinding Command="Close" Executed="CloseCommandBinding_Executed" />
+		<CommandBinding Command="New" Executed="FileCommandBinding_Executed" />
+		<CommandBinding Command="Open" Executed="FileCommandBinding_Executed" />
+		<CommandBinding Command="Save" Executed="FileCommandBinding_Executed" />
+		<CommandBinding Command="SaveAs" Executed="FileCommandBinding_Executed" />
+		<CommandBinding Command="Close" Executed="FileCommandBinding_Executed" />
 		<CommandBinding Command="Help" Executed="HelpCommandBinding_Executed" />
 		<CommandBinding Command="{x:Static local:CustomCommands.ShowAbout}" Executed="ShowAboutCommandBinding_Executed" />
 	</Window.CommandBindings>
