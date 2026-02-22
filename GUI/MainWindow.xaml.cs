@@ -20,7 +20,7 @@ namespace GUI;
 public partial class MainWindow : Window
 {
 	private FileStream? _openFile;
-	private AboutWindow? _openedAboutWindow;
+	private AboutWindow? _openAboutWindow;
 	private FileStream? OpenFile
 	{
 		get => _openFile;
@@ -36,6 +36,11 @@ public partial class MainWindow : Window
 		InitializeComponent();
 	}
 
+	private void MainWindow_Closed(object sender, EventArgs e)
+	{
+		OpenFile = null;
+		_openAboutWindow?.Close();
+	}
 	private void NewCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
 	{
 		if (OpenFile is not null)
@@ -117,11 +122,7 @@ public partial class MainWindow : Window
 		writer.Write(content);
 		OpenFile.SetLength(OpenFile.Position);
 	}
-	private void CloseCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
-	{
-		OpenFile = null;
-		Close();
-	}
+	private void CloseCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e) => Close();
 	private void HelpCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
 	{
 		var helpContent = """
@@ -146,16 +147,18 @@ public partial class MainWindow : Window
 			- О программе - информация о версии, авторе, лицензии
 			""";
 
-		MessageBox.Show(helpContent, "Справка", MessageBoxButton.OK, MessageBoxImage.Information);
+		_ = MessageBox.Show(helpContent, "Справка", MessageBoxButton.OK, MessageBoxImage.Information);
 	}
 	private void ShowAboutCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
 	{
-		if (_openedAboutWindow is null)
+		if (_openAboutWindow is null)
 		{
-			_openedAboutWindow = new AboutWindow();
-			_openedAboutWindow.Closed += (_, _) => _openedAboutWindow = null;
-			_openedAboutWindow.Show();
+			_openAboutWindow = new AboutWindow();
+			_openAboutWindow.Closed += (_, _) => _openAboutWindow = null;
+			_openAboutWindow.Show();
+
+			return;
 		}
-		_openedAboutWindow.Focus();
+		_ = _openAboutWindow.Focus();
 	}
 }

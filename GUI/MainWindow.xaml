@@ -5,7 +5,7 @@
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:local="clr-namespace:GUI"
 		mc:Ignorable="d"
-		Title="Компилятор" Height="450" Width="800">
+		Title="Компилятор" Height="450" Width="800" Closed="MainWindow_Closed">
 	<Window.Resources>
 		<Style TargetType="Image">
 			<Setter Property="Height" Value="32" />
