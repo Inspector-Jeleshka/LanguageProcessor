@@ -5,18 +5,18 @@
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:local="clr-namespace:GUI"
 		mc:Ignorable="d"
-		Title="Компилятор" Height="450" Width="800">
+		Title="Компилятор" Height="450" Width="800" Closed="MainWindow_Closed">
 	<Window.Resources>
 		<Style TargetType="Image">
 			<Setter Property="Height" Value="32" />
 		</Style>
 	</Window.Resources>
 	<Window.CommandBindings>
-		<CommandBinding Command="New" Executed="NewCommandBinding_Executed" />
-		<CommandBinding Command="Open" Executed="OpenCommandBinding_Executed" />
-		<CommandBinding Command="Save" Executed="SaveCommandBinding_Executed" />
-		<CommandBinding Command="SaveAs" Executed="SaveAsCommandBinding_Executed" />
-		<CommandBinding Command="Close" Executed="CloseCommandBinding_Executed" />
+		<CommandBinding Command="New" Executed="FileCommandBinding_Executed" />
+		<CommandBinding Command="Open" Executed="FileCommandBinding_Executed" />
+		<CommandBinding Command="Save" Executed="FileCommandBinding_Executed" />
+		<CommandBinding Command="SaveAs" Executed="FileCommandBinding_Executed" />
+		<CommandBinding Command="Close" Executed="FileCommandBinding_Executed" />
 		<CommandBinding Command="Help" Executed="HelpCommandBinding_Executed" />
 		<CommandBinding Command="{x:Static local:CustomCommands.ShowAbout}" Executed="ShowAboutCommandBinding_Executed" />
 	</Window.CommandBindings>
