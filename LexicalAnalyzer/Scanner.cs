@@ -1,4 +1,5 @@
 using LexicalAnalyzer.Tokens;
+using System.Globalization;
 
 namespace LexicalAnalyzer;
 
@@ -64,17 +65,28 @@ public class Scanner
 				case 1 when word == "const":
 					tokens.Add(new ConstKeyword());
 					_state = 0;
-					break;
+					continue;
 				case 1 when word == "f32":
 					tokens.Add(new F32Keyword());
 					_state = 0;
-					break;
+					continue;
 				case 1:
 					tokens.Add(new Identifier(word));
 					_state = 0;
-					break;
+					continue;
 				case 2 when char.IsDigit(symbol):
-
+					word += symbol;
+					break;
+				case 2 when symbol == '.':
+					word += symbol;
+					_state = 3;
+					break;
+				case 2:
+					if (int.TryParse(word, out var intVal))
+						tokens.Add(new IntLiteral(intVal));
+					else
+						Errors.Add(new ScannerException(Line, (Column, Column), $"Не удалось отсканировать число {word}"));
+					_state = 0;
 					break;
 				case 3:
 
@@ -83,15 +95,11 @@ public class Scanner
 					word += symbol;
 					break;
 				case 4:
-					_state = 0;
-					if (float.TryParse(word, out var number))
-					{
-						tokens.Add(new FloatLiteral(number));
-					}
+					if (float.TryParse(word, out var floatVal))
+						tokens.Add(new FloatLiteral(floatVal));
 					else
-					{
-
-					}
+						Errors.Add(new ScannerException(Line, (Column, Column), $"Не удалось отсканировать число {word}"));
+					_state = 0;
 					continue;
 				case 5:
 					tokens.Add(new Space());
