@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36811.4
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11520.95
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GUI", "GUI\GUI.csproj", "{36D2F479-A524-4F6B-9A03-593AC6AABDB1}"
 EndProject
@@ -9,6 +9,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LexicalAnalyzer", "LexicalAnalyzer\LexicalAnalyzer.csproj", "{F0D4F36A-C73E-45D2-BFDA-6FA996030407}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,6 +28,14 @@ Global
 		{36D2F479-A524-4F6B-9A03-593AC6AABDB1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{36D2F479-A524-4F6B-9A03-593AC6AABDB1}.Release|x64.ActiveCfg = Release|x64
 		{36D2F479-A524-4F6B-9A03-593AC6AABDB1}.Release|x64.Build.0 = Release|x64
+		{F0D4F36A-C73E-45D2-BFDA-6FA996030407}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F0D4F36A-C73E-45D2-BFDA-6FA996030407}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F0D4F36A-C73E-45D2-BFDA-6FA996030407}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F0D4F36A-C73E-45D2-BFDA-6FA996030407}.Debug|x64.Build.0 = Debug|Any CPU
+		{F0D4F36A-C73E-45D2-BFDA-6FA996030407}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F0D4F36A-C73E-45D2-BFDA-6FA996030407}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F0D4F36A-C73E-45D2-BFDA-6FA996030407}.Release|x64.ActiveCfg = Release|Any CPU
+		{F0D4F36A-C73E-45D2-BFDA-6FA996030407}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

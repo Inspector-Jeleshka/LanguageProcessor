@@ -1,4 +1,4 @@
-namespace LexicalAnazyler.Tokens;
+namespace LexicalAnalyzer.Tokens;
 
 public class FloatLiteral(float value) : IToken
 {
