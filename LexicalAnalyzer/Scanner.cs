@@ -1,5 +1,4 @@
 using LexicalAnalyzer.Tokens;
-using System.Globalization;
 
 namespace LexicalAnalyzer;
 
@@ -20,14 +19,6 @@ public class Scanner
 		while (pos <= input.Length)
 		{
 			var symbol = input[pos];
-			if (symbol == '\r' && input[pos + 1] == '\n'
-				|| symbol == '\n')
-			{
-				pos++;
-				Column = 1;
-				Line++;
-				continue;
-			}
 
 			switch (_state)
 			{
@@ -42,6 +33,13 @@ public class Scanner
 					_state = 2;
 					break;
 				case 0 when char.IsWhiteSpace(symbol):
+					if (symbol == '\r')
+						break;
+					if (symbol == '\n')
+					{
+						Column = 1;
+						Line++;
+					}
 					_state = 5;
 					break;
 				case 0 when symbol == ':':
@@ -63,15 +61,15 @@ public class Scanner
 					word += symbol;
 					break;
 				case 1 when word == "const":
-					tokens.Add(new ConstKeyword());
+					tokens.Add(new ConstKeyword(Line, (Column - word.Length, Column)));
 					_state = 0;
 					continue;
 				case 1 when word == "f32":
-					tokens.Add(new F32Keyword());
+					tokens.Add(new F32Keyword(Line, (Column - word.Length, Column)));
 					_state = 0;
 					continue;
 				case 1:
-					tokens.Add(new Identifier(word));
+					tokens.Add(new Identifier(Line, (Column - word.Length, Column), word));
 					_state = 0;
 					continue;
 				case 2 when char.IsDigit(symbol):
@@ -83,52 +81,76 @@ public class Scanner
 					break;
 				case 2:
 					if (int.TryParse(word, out var intVal))
-						tokens.Add(new IntLiteral(intVal));
+						tokens.Add(new IntLiteral(Line, (Column - word.Length, Column), intVal));
 					else
-						Errors.Add(new ScannerException(Line, (Column, Column), $"Не удалось отсканировать число {word}"));
+						Errors.Add(new ScannerException(Line, (Column - word.Length, Column), $"Не удалось отсканировать число {word}"));
 					_state = 0;
 					break;
 				case 3:
-
+					if (char.IsDigit(symbol))
+					{
+						word += symbol;
+						_state = 4;
+					}
+					else
+					{
+						Errors.Add(new ScannerException(Line, (Column - word.Length, Column), $"Не удалось отсканировать число {word}"));
+						_state = 0;
+					}
 					break;
 				case 4 when char.IsDigit(symbol):
 					word += symbol;
 					break;
 				case 4:
 					if (float.TryParse(word, out var floatVal))
-						tokens.Add(new FloatLiteral(floatVal));
+						tokens.Add(new FloatLiteral(Line, (Column - word.Length, Column), floatVal));
 					else
 						Errors.Add(new ScannerException(Line, (Column, Column), $"Не удалось отсканировать число {word}"));
 					_state = 0;
 					continue;
 				case 5:
-					tokens.Add(new Space());
+					tokens.Add(new Space(Line, (Column, Column)));
 					_state = 0;
 					continue;
 				case 6:
-					tokens.Add(new Colon());
+					tokens.Add(new Colon(Line, (Column, Column)));
 					_state = 0;
 					continue;
 				case 7:
-					tokens.Add(new AssignmentOperator());
+					tokens.Add(new AssignmentOperator(Line, (Column, Column)));
 					_state = 0;
 					continue;
 				case 8:
-					tokens.Add(new Semicolon());
+					tokens.Add(new Semicolon(Line, (Column, Column)));
 					_state = 0;
 					continue;
 				case 9:
-					tokens.Add(new Plus());
+					tokens.Add(new Plus(Line, (Column, Column)));
 					_state = 0;
 					continue;
 				case 10:
-					tokens.Add(new Minus());
+					tokens.Add(new Minus(Line, (Column, Column)));
 					_state = 0;
 					continue;
 			}
 
 			pos++;
 			Column++;
+		}
+
+		for (int i = 0; i < tokens.Count;)
+		{
+			if (i == 0 && tokens[i] is Space)
+			{
+				tokens.RemoveAt(i);
+				continue;
+			}
+			if (tokens[i] is Space && tokens[i - 1] is not ConstKeyword)
+			{
+				tokens.RemoveAt(i);
+				continue;
+			}
+			i++;
 		}
 		return tokens;
 	}
