@@ -30,6 +30,7 @@
 			<RowDefinition MinHeight="75" />
 		</Grid.RowDefinitions>
 		<Grid.ColumnDefinitions>
+			<ColumnDefinition />
 		</Grid.ColumnDefinitions>
 		<Menu Grid.Row="0">
 			<MenuItem Header="Файл">
