@@ -58,7 +58,7 @@
 				<MenuItem Header="Список литературы" />
 				<MenuItem Header="Исходный код программы" />
 			</MenuItem>
-			<MenuItem Header="Пуск" />
+			<MenuItem Header="Пуск" Click="RunScanner"/>
 			<MenuItem Header="Справка">
 				<MenuItem Header="Вызов справки" Command="Help" />
 				<MenuItem Header="О программе" Command="{x:Static local:CustomCommands.ShowAbout}" />
@@ -91,7 +91,7 @@
 				<Image Source="/Assets/paste.png" />
 			</Button>
 			<Separator />
-			<Button ToolTip="Пуск">
+			<Button ToolTip="Пуск" Click="RunScanner">
 				<Image Source="/Assets/run.png" />
 			</Button>
 			<Button ToolTip="Вызов справки" Command="Help">
@@ -106,7 +106,21 @@
 			</FlowDocument>
 		</RichTextBox>
 		<GridSplitter Grid.Row="3" VerticalAlignment="Center" HorizontalAlignment="Stretch" Background="Silver" Height="5" />
-		<DataGrid Grid.Row="4" Margin="5">
+		<DataGrid x:Name="dg" Grid.Row="4" Margin="5" AutoGenerateColumns="False" ItemsSource="{Binding Errors}" IsReadOnly="True" CanUserReorderColumns="False">
+			<DataGrid.Columns>
+				<DataGridTextColumn Width=".5*" CanUserResize="False" Header="Условный код" Binding="{Binding Code}" />
+				<DataGridTextColumn Width="*" CanUserResize="False" Header="Тип лексемы" Binding="{Binding Type}" />
+				<DataGridTextColumn Width="*" CanUserResize="False" Header="Лексема" Binding="{Binding Value}" />
+				<DataGridTemplateColumn Width="*" CanUserResize="False" Header="Местоположение" >
+					<DataGridTemplateColumn.CellTemplate>
+						<DataTemplate>
+							<Button Background="Transparent" BorderThickness="0" Click="Link_Click">
+								<TextBlock Text="{Binding Location}" TextDecorations="Underline" Foreground="Blue" />
+							</Button>
+						</DataTemplate>
+					</DataGridTemplateColumn.CellTemplate>
+				</DataGridTemplateColumn>
+			</DataGrid.Columns>
 
 		</DataGrid>
 	</Grid>

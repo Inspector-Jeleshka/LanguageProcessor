@@ -1,3 +1,5 @@
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -10,6 +12,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using CommunityToolkit.Mvvm.Input;
+using LexicalAnalyzer;
 using Microsoft.Win32;
 
 namespace GUI;
@@ -22,6 +26,7 @@ public partial class MainWindow : Window
 	private FileStream? _openFile;
 	private AboutWindow? _openAboutWindow;
 	private string _savedContent = string.Empty;
+	private Scanner _scanner = new();
 	private FileStream? OpenFile
 	{
 		get => _openFile;
@@ -31,10 +36,21 @@ public partial class MainWindow : Window
 			_openFile = value;
 		}
 	}
+	public ObservableCollection<LexemeInfo> Errors { get; } = new();
 
 	public MainWindow()
 	{
 		InitializeComponent();
+
+		DataContext = this;
+
+		//rtb.PreviewKeyDown += (s, e) =>
+		//{
+		//	if (e.Key == Key.Enter && (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
+		//	{
+		//		e.Handled = true;
+		//	}
+		//};
 	}
 
 	private void MainWindow_Closed(object sender, EventArgs e)
@@ -114,7 +130,7 @@ public partial class MainWindow : Window
 			}
 			catch (UnauthorizedAccessException)
 			{
-				_ = MessageBox.Show("Ошибка: указанный файл доступен только для чтения", "Ошибка", 
+				_ = MessageBox.Show("Ошибка: указанный файл доступен только для чтения", "Ошибка",
 					MessageBoxButton.OK, MessageBoxImage.Error);
 			}
 		}
@@ -187,5 +203,84 @@ public partial class MainWindow : Window
 		writer.Write(content);
 		OpenFile.SetLength(OpenFile.Position);
 		_savedContent = content;
+	}
+	//[RelayCommand]
+	private void RunScanner(object s, EventArgs e)
+	{
+		Errors.Clear();
+
+		var content = new TextRange(rtb.Document.ContentStart, rtb.Document.ContentEnd).Text;
+
+		var tokens = _scanner.Scan(content);
+		foreach (var err in _scanner.Errors)
+			Errors.Add(new LexemeInfo(err));
+		foreach (var token in tokens)
+			Errors.Add(new LexemeInfo(token));
+	}
+	private void Link_Click(object sender, RoutedEventArgs e)
+	{
+		if (dg.SelectedItem is not LexemeInfo selectedLexeme)
+			return;
+
+		var content = new TextRange(rtb.Document.ContentStart, rtb.Document.ContentEnd).Text;
+		var position = FindPositionInText(content, selectedLexeme.Line, selectedLexeme.Columns.Start);
+
+		if (position >= 0)
+		{
+			var cursorPosition = FindTextPointerByIndex(rtb.Document.ContentStart, position);
+			if (cursorPosition is null)
+				return;
+
+			rtb.CaretPosition = cursorPosition;
+			rtb.Focus();
+		}
+	}
+
+	private static int FindPositionInText(string text, int line, int column)
+	{
+		int currentLine = 1;
+		int currentColumn = 1;
+
+		for (int i = 0; i < text.Length; i++)
+		{
+			if (currentLine == line && currentColumn == column)
+				return i;
+
+			if (text[i] == '\n')
+			{
+				currentLine++;
+				currentColumn = 1;
+			}
+			else
+				currentColumn++;
+		}
+
+		return text.Length;
+	}
+	private static TextPointer FindTextPointerByIndex(TextPointer start, int targetIndex)
+	{
+		TextPointer current = start;
+		int currentIndex = 0;
+
+		while (current is not null && currentIndex <= targetIndex)
+		{
+			if (current.GetPointerContext(LogicalDirection.Forward) == TextPointerContext.Text)
+			{
+				string textRun = current.GetTextInRun(LogicalDirection.Forward);
+				int runLength = textRun.Length + "\r\n".Length;
+
+				if (currentIndex + runLength > targetIndex)
+				{
+					int offset = targetIndex - currentIndex;
+					return current.GetPositionAtOffset(offset);
+				}
+
+				currentIndex += runLength;
+			}
+
+			current = current.GetNextContextPosition(LogicalDirection.Forward);
+		}
+
+		return current ?? start;
 	}
 }
