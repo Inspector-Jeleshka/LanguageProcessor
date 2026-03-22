@@ -1,22 +1,27 @@
 using LexicalAnalyzer.Tokens;
+using System.Globalization;
 
 namespace LexicalAnalyzer;
 
 public class Scanner
 {
-	private int _state = 0;
+	private int _state;
 
-	public int Line { get; private set; } = 1;
-	public int Column { get; private set; } = 1;
+	public int Line { get; private set; }
+	public int Column { get; private set; }
 	public List<ScannerException> Errors = new();
 
 	public IEnumerable<IToken> Scan(string input)
 	{
+		_state = 0;
+		Line = 1;
+		Column = 1;
+		Errors = new();
 		var tokens = new List<IToken>();
 		var word = string.Empty;
 		var pos = 0;
 
-		while (pos <= input.Length)
+		while (pos < input.Length)
 		{
 			var symbol = input[pos];
 
@@ -35,12 +40,14 @@ public class Scanner
 				case 0 when char.IsWhiteSpace(symbol):
 					if (symbol == '\r')
 						break;
+					_state = 5;
 					if (symbol == '\n')
 					{
 						Column = 1;
 						Line++;
+						pos++;
+						continue;
 					}
-					_state = 5;
 					break;
 				case 0 when symbol == ':':
 					_state = 6;
@@ -61,15 +68,15 @@ public class Scanner
 					word += symbol;
 					break;
 				case 1 when word == "const":
-					tokens.Add(new ConstKeyword(Line, (Column - word.Length, Column)));
+					tokens.Add(new ConstKeyword(Line, (Column - word.Length, Column - 1)));
 					_state = 0;
 					continue;
 				case 1 when word == "f32":
-					tokens.Add(new F32Keyword(Line, (Column - word.Length, Column)));
+					tokens.Add(new F32Keyword(Line, (Column - word.Length, Column - 1)));
 					_state = 0;
 					continue;
 				case 1:
-					tokens.Add(new Identifier(Line, (Column - word.Length, Column), word));
+					tokens.Add(new Identifier(Line, (Column - word.Length, Column - 1), word));
 					_state = 0;
 					continue;
 				case 2 when char.IsDigit(symbol):
@@ -81,11 +88,11 @@ public class Scanner
 					break;
 				case 2:
 					if (int.TryParse(word, out var intVal))
-						tokens.Add(new IntLiteral(Line, (Column - word.Length, Column), intVal));
+						tokens.Add(new IntLiteral(Line, (Column - word.Length, Column - 1), intVal));
 					else
-						Errors.Add(new ScannerException(Line, (Column - word.Length, Column), $"Не удалось отсканировать число {word}"));
+						Errors.Add(new ScannerException(Line, (Column - word.Length, Column	- 1), $"Не удалось отсканировать число {word}"));
 					_state = 0;
-					break;
+					continue;
 				case 3:
 					if (char.IsDigit(symbol))
 					{
@@ -94,42 +101,43 @@ public class Scanner
 					}
 					else
 					{
-						Errors.Add(new ScannerException(Line, (Column - word.Length, Column), $"Не удалось отсканировать число {word}"));
+						Errors.Add(new ScannerException(Line, (Column - word.Length, Column - 1), $"Не удалось отсканировать число {word}"));
 						_state = 0;
+						continue;
 					}
 					break;
 				case 4 when char.IsDigit(symbol):
 					word += symbol;
 					break;
 				case 4:
-					if (float.TryParse(word, out var floatVal))
-						tokens.Add(new FloatLiteral(Line, (Column - word.Length, Column), floatVal));
+					if (float.TryParse(word, CultureInfo.InvariantCulture, out var floatVal))
+						tokens.Add(new FloatLiteral(Line, (Column - word.Length, Column - 1), floatVal));
 					else
-						Errors.Add(new ScannerException(Line, (Column, Column), $"Не удалось отсканировать число {word}"));
+						Errors.Add(new ScannerException(Line, (Column - 1, Column - 1), $"Не удалось отсканировать число {word}"));
 					_state = 0;
 					continue;
 				case 5:
-					tokens.Add(new Space(Line, (Column, Column)));
+					tokens.Add(new Space(Line, (Column - 1, Column - 1)));
 					_state = 0;
 					continue;
 				case 6:
-					tokens.Add(new Colon(Line, (Column, Column)));
+					tokens.Add(new Colon(Line, (Column - 1, Column - 1)));
 					_state = 0;
 					continue;
 				case 7:
-					tokens.Add(new AssignmentOperator(Line, (Column, Column)));
+					tokens.Add(new AssignmentOperator(Line, (Column - 1, Column - 1)));
 					_state = 0;
 					continue;
 				case 8:
-					tokens.Add(new Semicolon(Line, (Column, Column)));
+					tokens.Add(new Semicolon(Line, (Column - 1, Column - 1)));
 					_state = 0;
 					continue;
 				case 9:
-					tokens.Add(new Plus(Line, (Column, Column)));
+					tokens.Add(new Plus(Line, (Column - 1, Column - 1)));
 					_state = 0;
 					continue;
 				case 10:
-					tokens.Add(new Minus(Line, (Column, Column)));
+					tokens.Add(new Minus(Line, (Column - 1, Column - 1)));
 					_state = 0;
 					continue;
 			}
