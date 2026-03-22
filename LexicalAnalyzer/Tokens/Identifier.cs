@@ -8,5 +8,5 @@ public class Identifier(int line, (int, int) columns, string value) : IToken
 	public string Name => "идентификатор";
 	public string Value { get; } = value;
 
-	public override string ToString() => Name;
+	public override string ToString() => Value;
 }
