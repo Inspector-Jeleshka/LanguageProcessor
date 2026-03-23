@@ -140,6 +140,10 @@ public class Scanner
 					tokens.Add(new Minus(Line, (Column - 1, Column - 1)));
 					_state = 0;
 					continue;
+				default:
+					Errors.Add(new ScannerException(Line, (Column, Column), $"Неизвестный символ {symbol}"));
+					_state = 0;
+					break;
 			}
 
 			pos++;
