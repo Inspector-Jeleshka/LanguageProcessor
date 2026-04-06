@@ -164,6 +164,19 @@ public class Scanner
 			}
 			i++;
 		}
+		for (int i = 0; i < Errors.Count - 1;)
+		{
+			if (Errors[i].Line == Errors[i+1].Line && Errors[i].Columns.Item2 + 1 == Errors[i + 1].Columns.Item1)
+			{
+				var line = Errors[i].Line;
+				var message = "Неизвестная последовательность";
+				var newError = new ScannerException(line, (Errors[i].Columns.Item1, Errors[i + 1].Columns.Item2), message);
+				Errors.RemoveAt(i + 1);
+				Errors[i] = newError;
+			}
+			else
+				i++;
+		}
 		return tokens;
 	}
 }
