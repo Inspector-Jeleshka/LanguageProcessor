@@ -1,10 +1,9 @@
 using LexicalAnalyzer;
 using LexicalAnalyzer.Tokens;
-using System.ComponentModel;
 
-namespace GUI;
+namespace GUI.Models;
 
-public class LexemeInfo
+internal class LexemeInfo
 {
 	public int Code { get; }
 	public string Type { get; }

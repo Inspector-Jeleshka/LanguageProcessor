@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using CommunityToolkit.Mvvm.Input;
+using GUI.Models;
 using LexicalAnalyzer;
 using Microsoft.Win32;
 
