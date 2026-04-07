@@ -3,7 +3,7 @@ using LexicalAnalyzer.Tokens;
 
 namespace GUI.Models;
 
-internal class LexemeInfo
+public class LexemeInfo
 {
 	public int Code { get; }
 	public string Type { get; }
