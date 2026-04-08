@@ -1,6 +1,6 @@
 namespace GUI.Services;
 
-internal interface IFileService
+public interface IFileService
 {
 	string ReadAllText(string path);
 	void WriteAllText(string path, string text);
