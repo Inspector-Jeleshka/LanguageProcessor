@@ -1,15 +1,11 @@
 using GUI.Services;
 using GUI.ViewModels;
+using GUI.Views;
 using Microsoft.Extensions.DependencyInjection;
-using System.Configuration;
-using System.Data;
 using System.Windows;
 
 namespace GUI;
 
-/// <summary>
-/// Interaction logic for App.xaml
-/// </summary>
 public partial class App : Application
 {
 	private IServiceProvider? _serviceProvider;

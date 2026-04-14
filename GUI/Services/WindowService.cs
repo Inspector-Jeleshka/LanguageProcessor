@@ -1,3 +1,5 @@
+using GUI.Views;
+
 namespace GUI.Services;
 
 public class WindowService : IWindowService

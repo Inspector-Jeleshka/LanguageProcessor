@@ -1,7 +1,7 @@
 using System.Windows;
 using GUI.ViewModels;
 
-namespace GUI;
+namespace GUI.Views;
 
 public partial class MainWindow : Window
 {
