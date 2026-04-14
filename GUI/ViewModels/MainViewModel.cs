@@ -193,11 +193,11 @@ public class MainViewModel : ObservableObject
 		var content = _documentService.Text;
 		var pos = FindPositionInText(content, lexeme.Line, lexeme.Columns.Start);
 
-		var newCursorPosition = _documentService.FindTextPointerByIndex(pos);
-		if (newCursorPosition is null)
+		var newCaretPosition = _documentService.FindTextPointerByIndex(pos);
+		if (newCaretPosition is null)
 			return;
 
-		NavigateToPostionRequested?.Invoke(newCursorPosition);
+		NavigateToPostionRequested?.Invoke(newCaretPosition);
 	}
 
 	private static int FindPositionInText(string text, int line, int column)

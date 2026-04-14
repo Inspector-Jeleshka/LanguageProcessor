@@ -4,23 +4,23 @@
 		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:local="clr-namespace:GUI"
+		xmlns:vm="clr-namespace:GUI.ViewModels"
+		d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
 		mc:Ignorable="d"
-		Title="Компилятор" Height="450" Width="800" MinHeight="450" MinWidth="800" Closed="MainWindow_Closed"
-		FocusManager.FocusedElement="{Binding ElementName=rtb}">
+		Title="Компилятор" Height="450" Width="800" MinHeight="450" MinWidth="800">
 	<Window.Resources>
 		<Style TargetType="Image">
 			<Setter Property="Height" Value="32" />
 		</Style>
 	</Window.Resources>
-	<Window.CommandBindings>
-		<CommandBinding Command="New" Executed="FileCommandBinding_Executed" />
-		<CommandBinding Command="Open" Executed="FileCommandBinding_Executed" />
-		<CommandBinding Command="Save" Executed="FileCommandBinding_Executed" />
-		<CommandBinding Command="SaveAs" Executed="FileCommandBinding_Executed" />
-		<CommandBinding Command="Close" Executed="FileCommandBinding_Executed" />
-		<CommandBinding Command="Help" Executed="HelpCommandBinding_Executed" />
-		<CommandBinding Command="{x:Static local:CustomCommands.ShowAbout}" Executed="ShowAboutCommandBinding_Executed" />
-	</Window.CommandBindings>
+	<Window.InputBindings>
+		<KeyBinding Gesture="Ctrl+N" Command="{Binding NewCommand}" />
+		<KeyBinding Gesture="Ctrl+O" Command="{Binding OpenCommand}" />
+		<KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" />
+		<KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveAsCommand}" />
+		<KeyBinding Gesture="Alt+F4" Command="{Binding CloseCommand}" />
+		<KeyBinding Gesture="F1" Command="{Binding HelpCommand}" />
+	</Window.InputBindings>
 	<Grid>
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto" />
@@ -34,11 +34,11 @@
 		</Grid.ColumnDefinitions>
 		<Menu Grid.Row="0">
 			<MenuItem Header="Файл">
-				<MenuItem Header="Создать" Command="New" />
-				<MenuItem Header="Открыть" Command="Open" />
-				<MenuItem Header="Сохранить" Command="Save" />
-				<MenuItem Header="Сохранить как" Command="SaveAs" />
-				<MenuItem Header="Выход" Command="Close" />
+				<MenuItem Header="Создать" Command="{Binding NewCommand}" InputGestureText="Ctrl+N" />
+				<MenuItem Header="Открыть" Command="{Binding OpenCommand}" InputGestureText="Ctrl+O" />
+				<MenuItem Header="Сохранить" Command="{Binding SaveCommand}" InputGestureText="Ctrl+S" />
+				<MenuItem Header="Сохранить как" Command="{Binding SaveAsCommand}" InputGestureText="Ctrl+Shift+S" />
+				<MenuItem Header="Выход" Command="{Binding CloseCommand}" InputGestureText="Alt+F4" />
 			</MenuItem>
 			<MenuItem Header="Правка">
 				<MenuItem Header="Отменить" Command="Undo" />
@@ -58,10 +58,10 @@
 				<MenuItem Header="Список литературы" />
 				<MenuItem Header="Исходный код программы" />
 			</MenuItem>
-			<MenuItem Header="Пуск" Click="RunScanner"/>
+			<MenuItem Header="Пуск" Command="{Binding RunScannerCommand}"/>
 			<MenuItem Header="Справка">
-				<MenuItem Header="Вызов справки" Command="Help" />
-				<MenuItem Header="О программе" Command="{x:Static local:CustomCommands.ShowAbout}" />
+				<MenuItem Header="Вызов справки" Command="{Binding HelpCommand}" InputGestureText="F1" />
+				<MenuItem Header="О программе" Command="{Binding AboutCommand}" />
 			</MenuItem>
 		</Menu>
 		<ToolBar Grid.Row="1">
@@ -91,22 +91,20 @@
 				<Image Source="/Assets/paste.png" />
 			</Button>
 			<Separator />
-			<Button ToolTip="Пуск" Click="RunScanner">
+			<Button ToolTip="Пуск" Command="{Binding RunScannerCommand}">
 				<Image Source="/Assets/run.png" />
 			</Button>
 			<Button ToolTip="Вызов справки" Command="Help">
 				<Image Source="/Assets/question.png" />
 			</Button>
-			<Button ToolTip="О программе" Command="{x:Static local:CustomCommands.ShowAbout}">
+			<Button ToolTip="О программе" Command="{Binding AboutCommand}">
 				<Image Source="/Assets/information.png" />
 			</Button>
 		</ToolBar>
 		<RichTextBox x:Name="rtb" Grid.Row="2" Margin="5" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-			<FlowDocument>
-			</FlowDocument>
 		</RichTextBox>
 		<GridSplitter Grid.Row="3" VerticalAlignment="Center" HorizontalAlignment="Stretch" Background="Silver" Height="5" />
-		<DataGrid x:Name="dg" Grid.Row="4" Margin="5" AutoGenerateColumns="False" ItemsSource="{Binding Errors}" IsReadOnly="True" CanUserReorderColumns="False">
+		<DataGrid x:Name="dg" Grid.Row="4" Margin="5" AutoGenerateColumns="False" ItemsSource="{Binding Lexemes}" IsReadOnly="True" CanUserReorderColumns="False">
 			<DataGrid.Columns>
 				<DataGridTextColumn Width=".5*" CanUserResize="False" Header="Условный код" Binding="{Binding Code}" />
 				<DataGridTextColumn Width="*" CanUserResize="False" Header="Тип лексемы" Binding="{Binding Type}" />
@@ -114,7 +112,7 @@
 				<DataGridTemplateColumn Width="*" CanUserResize="False" Header="Местоположение" >
 					<DataGridTemplateColumn.CellTemplate>
 						<DataTemplate>
-							<Button Background="Transparent" BorderThickness="0" Click="Link_Click">
+							<Button Background="Transparent" BorderThickness="0" Command="{Binding GoToLexemeCommand}">
 								<TextBlock Text="{Binding Location}" TextDecorations="Underline" Foreground="Blue" />
 							</Button>
 						</DataTemplate>
