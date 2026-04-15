@@ -10,7 +10,7 @@ using System.Windows.Input;
 
 namespace GUI.ViewModels;
 
-public class MainViewModel : ObservableObject
+public partial class MainViewModel : ObservableObject
 {
 	private readonly IFileService _fileService;
 	private readonly IFileDialogService _fileDialogService;
@@ -24,15 +24,8 @@ public class MainViewModel : ObservableObject
 	public FlowDocument Document => _documentService.Document;
 	public ObservableCollection<LexemeInfo> Lexemes { get; } = new();
 
-	public ICommand NewCommand { get; }
-	public ICommand OpenCommand { get; }
-	public ICommand SaveCommand { get; }
-	public ICommand SaveAsCommand { get; }
-	public ICommand CloseCommand { get; }
-	public ICommand HelpCommand { get; }
+	public ICommand SaveDocumentAsCommand { get; }
 	public ICommand AboutCommand { get; }
-	public ICommand RunScannerCommand { get; }
-	public ICommand GoToLexemeCommand { get; }
 
 	public bool HasChanges => _savedContent != _documentService.Text;
 
@@ -46,15 +39,8 @@ public class MainViewModel : ObservableObject
 		_documentService = documentService;
 		_windowService = windowService;
 
-		NewCommand = new RelayCommand(NewDocument);
-		OpenCommand = new RelayCommand(OpenDocument);
-		SaveCommand = new RelayCommand(SaveDocument);
-		SaveAsCommand = new RelayCommand(() => SaveDocumentAs());
-		CloseCommand = new RelayCommand(CloseApplication);
-		HelpCommand = new RelayCommand(ShowHelp);
+		SaveDocumentAsCommand = new RelayCommand(() => SaveDocumentAs());
 		AboutCommand = new RelayCommand(_windowService.ShowAboutWindow);
-		RunScannerCommand = new RelayCommand(RunScanner);
-		GoToLexemeCommand = new RelayCommand<LexemeInfo>(lexeme => NavigateToLexeme(lexeme));
 	}
 
 	private bool CheckUnsavedChanges()
@@ -79,6 +65,7 @@ public class MainViewModel : ObservableObject
 		return true;
 	}
 
+	[RelayCommand]
 	private void NewDocument()
 	{
 		if (!CheckUnsavedChanges())
@@ -89,6 +76,7 @@ public class MainViewModel : ObservableObject
 		_savedContent = string.Empty;
 	}
 
+	[RelayCommand]
 	private void OpenDocument()
 	{
 		if (!CheckUnsavedChanges())
@@ -112,6 +100,7 @@ public class MainViewModel : ObservableObject
 		}
 	}
 
+	[RelayCommand]
 	private void SaveDocument()
 	{
 		if (string.IsNullOrEmpty(_currentFilePath))
@@ -136,6 +125,7 @@ public class MainViewModel : ObservableObject
 		return true;
 	}
 
+	[RelayCommand]
 	private void CloseApplication()
 	{
 		if (!CheckUnsavedChanges())
@@ -144,6 +134,7 @@ public class MainViewModel : ObservableObject
 		Application.Current.Shutdown();
 	}
 
+	[RelayCommand]
 	private void ShowHelp()
 	{
 		var helpMessage = """
@@ -171,6 +162,7 @@ public class MainViewModel : ObservableObject
 		_ = MessageBox.Show(helpMessage, "Справка", MessageBoxButton.OK, MessageBoxImage.Information);
 	}
 
+	[RelayCommand]
 	private void RunScanner()
 	{
 		Lexemes.Clear();
@@ -185,6 +177,7 @@ public class MainViewModel : ObservableObject
 			Lexemes.Add(new(token));
 	}
 
+	[RelayCommand]
 	private void NavigateToLexeme(LexemeInfo? lexeme)
 	{
 		if (lexeme is null)

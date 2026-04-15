@@ -14,12 +14,12 @@
 		</Style>
 	</Window.Resources>
 	<Window.InputBindings>
-		<KeyBinding Gesture="Ctrl+N" Command="{Binding NewCommand}" />
-		<KeyBinding Gesture="Ctrl+O" Command="{Binding OpenCommand}" />
-		<KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" />
-		<KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveAsCommand}" />
-		<KeyBinding Gesture="Alt+F4" Command="{Binding CloseCommand}" />
-		<KeyBinding Gesture="F1" Command="{Binding HelpCommand}" />
+		<KeyBinding Gesture="Ctrl+N" Command="{Binding NewDocumentCommand}" />
+		<KeyBinding Gesture="Ctrl+O" Command="{Binding OpenDocumentCommand}" />
+		<KeyBinding Gesture="Ctrl+S" Command="{Binding SaveDocumentCommand}" />
+		<KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveDocumentAsCommand}" />
+		<KeyBinding Gesture="Alt+F4" Command="{Binding CloseApplicationCommand}" />
+		<KeyBinding Gesture="F1" Command="{Binding ShowHelpCommand}" />
 	</Window.InputBindings>
 	<Grid>
 		<Grid.RowDefinitions>
@@ -34,11 +34,11 @@
 		</Grid.ColumnDefinitions>
 		<Menu Grid.Row="0">
 			<MenuItem Header="Файл">
-				<MenuItem Header="Создать" Command="{Binding NewCommand}" InputGestureText="Ctrl+N" />
-				<MenuItem Header="Открыть" Command="{Binding OpenCommand}" InputGestureText="Ctrl+O" />
-				<MenuItem Header="Сохранить" Command="{Binding SaveCommand}" InputGestureText="Ctrl+S" />
-				<MenuItem Header="Сохранить как" Command="{Binding SaveAsCommand}" InputGestureText="Ctrl+Shift+S" />
-				<MenuItem Header="Выход" Command="{Binding CloseCommand}" InputGestureText="Alt+F4" />
+				<MenuItem Header="Создать" Command="{Binding NewDocumentCommand}" InputGestureText="Ctrl+N" />
+				<MenuItem Header="Открыть" Command="{Binding OpenDocumentCommand}" InputGestureText="Ctrl+O" />
+				<MenuItem Header="Сохранить" Command="{Binding SaveDocumentCommand}" InputGestureText="Ctrl+S" />
+				<MenuItem Header="Сохранить как" Command="{Binding SaveDocumentAsCommand}" InputGestureText="Ctrl+Shift+S" />
+				<MenuItem Header="Выход" Command="{Binding CloseApplicationCommand}" InputGestureText="Alt+F4" />
 			</MenuItem>
 			<MenuItem Header="Правка">
 				<MenuItem Header="Отменить" Command="Undo" />
@@ -60,18 +60,18 @@
 			</MenuItem>
 			<MenuItem Header="Пуск" Command="{Binding RunScannerCommand}"/>
 			<MenuItem Header="Справка">
-				<MenuItem Header="Вызов справки" Command="{Binding HelpCommand}" InputGestureText="F1" />
+				<MenuItem Header="Вызов справки" Command="{Binding ShowHelpCommand}" InputGestureText="F1" />
 				<MenuItem Header="О программе" Command="{Binding AboutCommand}" />
 			</MenuItem>
 		</Menu>
 		<ToolBar Grid.Row="1">
-			<Button ToolTip="Создать" Command="New">
+			<Button ToolTip="Создать" Command="{Binding NewDocumentCommand}">
 				<Image Source="/Assets/file.png" />
 			</Button>
-			<Button ToolTip="Открыть" Command="Open">
+			<Button ToolTip="Открыть" Command="{Binding OpenDocumentCommand}">
 				<Image Source="/Assets/folder.png" />
 			</Button>
-			<Button ToolTip="Сохранить" Command="Save">
+			<Button ToolTip="Сохранить" Command="{Binding SaveDocumentCommand}">
 				<Image Source="/Assets/save.png" />
 			</Button>
 			<Separator />
@@ -94,15 +94,14 @@
 			<Button ToolTip="Пуск" Command="{Binding RunScannerCommand}">
 				<Image Source="/Assets/run.png" />
 			</Button>
-			<Button ToolTip="Вызов справки" Command="{Binding HelpCommand}">
+			<Button ToolTip="Вызов справки" Command="{Binding ShowHelpCommand}">
 				<Image Source="/Assets/question.png" />
 			</Button>
 			<Button ToolTip="О программе" Command="{Binding AboutCommand}">
 				<Image Source="/Assets/information.png" />
 			</Button>
 		</ToolBar>
-		<RichTextBox x:Name="rtb" Grid.Row="2" Margin="5" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-		</RichTextBox>
+		<RichTextBox x:Name="rtb" Grid.Row="2" Margin="5" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" />
 		<GridSplitter Grid.Row="3" VerticalAlignment="Center" HorizontalAlignment="Stretch" Background="Silver" Height="5" />
 		<DataGrid x:Name="dg" Grid.Row="4" Margin="5" AutoGenerateColumns="False" ItemsSource="{Binding Lexemes}" IsReadOnly="True" CanUserReorderColumns="False">
 			<DataGrid.Columns>
