@@ -120,5 +120,7 @@
 Построить автомат для поиска подстрок из задачи 2.
 
 Граф автомата:  
-<img width="362" height="282" alt="Граф автомата задачи 2" src="https://github.com/user-attachments/assets/b89956a0-c227-47ee-a996-d5b56a99dfb9" />
+<img width="362" height="282" alt="Граф автомата задачи 2" src="https://github.com/user-attachments/assets/3dbc21c3-ccf8-4666-923a-5bd6bf3205d0" />
+
+<img width="786" height="551" alt="Задача 2, через автомат. Пример" src="https://github.com/user-attachments/assets/85a67ff7-a106-43d8-81ba-6484d7a26f41" />
 
