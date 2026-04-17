@@ -206,10 +206,7 @@ public partial class MainViewModel : ObservableObject
 		if (lexeme is null)
 			return;
 
-		var content = _documentService.Text;
-		var pos = FindPositionInText(content, lexeme.Line, lexeme.Columns.Start);
-
-		var newCaretPosition = _documentService.FindTextPointerByIndex(pos);
+		var newCaretPosition = _documentService.GetTextPointerAt(lexeme.Line, lexeme.Columns.Start);
 		if (newCaretPosition is null)
 			return;
 
@@ -222,33 +219,11 @@ public partial class MainViewModel : ObservableObject
 		if (substring is null)
 			return;
 
-		var selectStart = _documentService.FindTextPointerByIndex(substring.Index);
-		var selectEnd = _documentService.FindTextPointerByIndex(substring.Index + substring.Length);
+		var selectStart = _documentService.GetTextPointerAt(substring.Line, substring.Columns.Start);
+		var selectEnd = _documentService.GetTextPointerAt(substring.Line, substring.Columns.Start + substring.Length);
 		if (selectStart is null || selectEnd is null)
 			return;
 
 		SelectionChangeRequested?.Invoke(selectStart, selectEnd);
-	}
-
-	private static int FindPositionInText(string text, int line, int column)
-	{
-		int currentLine = 1;
-		int currentColumn = 1;
-
-		for (int i = 0; i < text.Length; i++)
-		{
-			if (currentLine == line && currentColumn == column)
-				return i;
-
-			if (text[i] == '\n')
-			{
-				currentLine++;
-				currentColumn = 1;
-			}
-			else
-				currentColumn++;
-		}
-
-		return text.Length;
 	}
 }
