@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using GUI.Models;
 using GUI.Services;
 using LexicalAnalyzer;
+using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Documents;
@@ -21,8 +22,13 @@ public partial class MainViewModel : ObservableObject
 	private string _savedContent = string.Empty;
 	private readonly Scanner _scanner = new();
 
+	public static ImmutableList<SubstringTemplate> AllTemplates => SubstringTemplate.AllTemplates;
+
 	public FlowDocument Document => _documentService.Document;
 	public ObservableCollection<LexemeInfo> Lexemes { get; } = new();
+	public SubstringTemplate SelectedTemplate { get; set; } = SubstringTemplate.Number;
+	public ObservableCollection<SubstringMatch> FoundSubstrings { get; } = new();
+	public SubstringMatch? SelectedSubstring { get; set; }
 
 	public ICommand SaveDocumentAsCommand { get; }
 	public ICommand AboutCommand { get; }
@@ -30,6 +36,7 @@ public partial class MainViewModel : ObservableObject
 	public bool HasChanges => _savedContent != _documentService.Text;
 
 	public event Action<TextPointer>? NavigateToPostionRequested;
+	public event Action<TextPointer, TextPointer>? SelectionChangeRequested;
 
 	public MainViewModel(IFileService fileService, IFileDialogService fileDialogService,
 		IDocumentService documentService, IWindowService windowService)
@@ -163,6 +170,13 @@ public partial class MainViewModel : ObservableObject
 	}
 
 	[RelayCommand]
+	private void RunAll()
+	{
+		RunScanner();
+		FindSubstrings();
+	}
+
+	[RelayCommand]
 	private void RunScanner()
 	{
 		Lexemes.Clear();
@@ -175,6 +189,15 @@ public partial class MainViewModel : ObservableObject
 
 		foreach (var token in tokens)
 			Lexemes.Add(new(token));
+	}
+
+	[RelayCommand]
+	private void FindSubstrings()
+	{
+		FoundSubstrings.Clear();
+		var substrings = new RegexService().FindSubstrings(_documentService.Text, SelectedTemplate);
+		foreach (var substring in substrings)
+			FoundSubstrings.Add(substring);
 	}
 
 	[RelayCommand]
@@ -191,6 +214,20 @@ public partial class MainViewModel : ObservableObject
 			return;
 
 		NavigateToPostionRequested?.Invoke(newCaretPosition);
+	}
+
+	[RelayCommand]
+	private void HighlightSubstring(SubstringMatch? substring)
+	{
+		if (substring is null)
+			return;
+
+		var selectStart = _documentService.FindTextPointerByIndex(substring.Index);
+		var selectEnd = _documentService.FindTextPointerByIndex(substring.Index + substring.Length);
+		if (selectStart is null || selectEnd is null)
+			return;
+
+		SelectionChangeRequested?.Invoke(selectStart, selectEnd);
 	}
 
 	private static int FindPositionInText(string text, int line, int column)
