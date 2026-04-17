@@ -21,6 +21,11 @@ public partial class MainWindow : Window
 			rtb.CaretPosition = newCaretPosition;
 			rtb.Focus();
 		};
+		_viewModel.SelectionChangeRequested += (selectStart, selectEnd) =>
+		{
+			rtb.Selection.Select(selectStart, selectEnd);
+			rtb.Focus();
+		};
 	}
 
 	protected override void OnClosed(EventArgs e)

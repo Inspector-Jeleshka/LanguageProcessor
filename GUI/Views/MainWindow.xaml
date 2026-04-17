@@ -58,7 +58,7 @@
 				<MenuItem Header="Список литературы" />
 				<MenuItem Header="Исходный код программы" />
 			</MenuItem>
-			<MenuItem Header="Пуск" Command="{Binding RunScannerCommand}"/>
+			<MenuItem Header="Пуск" Command="{Binding RunAllCommand}"/>
 			<MenuItem Header="Справка">
 				<MenuItem Header="Вызов справки" Command="{Binding ShowHelpCommand}" InputGestureText="F1" />
 				<MenuItem Header="О программе" Command="{Binding AboutCommand}" />
@@ -91,9 +91,15 @@
 				<Image Source="/Assets/paste.png" />
 			</Button>
 			<Separator />
-			<Button ToolTip="Пуск" Command="{Binding RunScannerCommand}">
+			<Button ToolTip="Пуск" Command="{Binding RunAllCommand}">
 				<Image Source="/Assets/run.png" />
 			</Button>
+			<StackPanel Orientation="Horizontal">
+				<TextBlock Text="Шаблон подстроки:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+				<ComboBox ItemsSource="{x:Static vm:MainViewModel.AllTemplates}"
+						  SelectedItem="{Binding SelectedTemplate}" VerticalAlignment="Center" Width="160" />
+			</StackPanel>
+			<Separator />
 			<Button ToolTip="Вызов справки" Command="{Binding ShowHelpCommand}">
 				<Image Source="/Assets/question.png" />
 			</Button>
@@ -103,22 +109,49 @@
 		</ToolBar>
 		<RichTextBox x:Name="rtb" Grid.Row="2" Margin="5" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" />
 		<GridSplitter Grid.Row="3" VerticalAlignment="Center" HorizontalAlignment="Stretch" Background="Silver" Height="5" />
-		<DataGrid x:Name="dg" Grid.Row="4" Margin="5" AutoGenerateColumns="False" ItemsSource="{Binding Lexemes}" IsReadOnly="True" CanUserReorderColumns="False">
-			<DataGrid.Columns>
-				<DataGridTextColumn Width=".5*" CanUserResize="False" Header="Условный код" Binding="{Binding Code}" />
-				<DataGridTextColumn Width="*" CanUserResize="False" Header="Тип лексемы" Binding="{Binding Type}" />
-				<DataGridTextColumn Width="*" CanUserResize="False" Header="Лексема" Binding="{Binding Value}" />
-				<DataGridTemplateColumn Width="*" CanUserResize="False" Header="Местоположение" >
-					<DataGridTemplateColumn.CellTemplate>
-						<DataTemplate>
-							<Button Background="Transparent" BorderThickness="0" Command="{Binding GoToLexemeCommand}">
-								<TextBlock Text="{Binding Location}" TextDecorations="Underline" Foreground="Blue" />
-							</Button>
-						</DataTemplate>
-					</DataGridTemplateColumn.CellTemplate>
-				</DataGridTemplateColumn>
-			</DataGrid.Columns>
-
-		</DataGrid>
+		<TabControl Grid.Row="4" Margin="5">
+			<TabItem Header="Вывод лексера">
+				<DataGrid AutoGenerateColumns="False" ItemsSource="{Binding Lexemes}" IsReadOnly="True"
+						  CanUserReorderColumns="False" CanUserResizeColumns="False" SelectionMode="Single">
+					<DataGrid.Columns>
+						<DataGridTextColumn Width=".5*" Header="Условный код" Binding="{Binding Code}" />
+						<DataGridTextColumn Width="*" Header="Тип лексемы" Binding="{Binding Type}" />
+						<DataGridTextColumn Width="*" Header="Лексема" Binding="{Binding Value}" />
+						<DataGridTextColumn Width="*" Header="Местоположение" Binding="{Binding Location}" />
+					</DataGrid.Columns>
+					<DataGrid.InputBindings>
+						<MouseBinding MouseAction="LeftDoubleClick" Command="{Binding NavigateToLexemeCommand}"
+									  CommandParameter="{Binding SelectedItem,
+									  RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+					</DataGrid.InputBindings>
+				</DataGrid>
+			</TabItem>
+			<TabItem Header="Найденные подстроки">
+				<Grid>
+					<Grid.RowDefinitions>
+						<RowDefinition Height="Auto" />
+						<RowDefinition Height="*" />
+					</Grid.RowDefinitions>
+					<StackPanel Grid.Row="0" Orientation="Horizontal" Margin="2,2,0,2">
+						<TextBlock Text="Число совпадений: " />
+						<TextBlock Text="{Binding FoundSubstrings.Count}" />
+					</StackPanel>
+					<DataGrid Grid.Row="1" AutoGenerateColumns="False" ItemsSource="{Binding FoundSubstrings}" IsReadOnly="True"
+						  SelectedItem="{Binding SelectedSubstring}" CanUserReorderColumns="False"
+						  CanUserResizeColumns="False" SelectionMode="Single">
+						<DataGrid.Columns>
+							<DataGridTextColumn Width="*" Header="Найденная подстрока" Binding="{Binding Value}" />
+							<DataGridTextColumn Width=".5*" Header="Начальная позиция" Binding="{Binding Location}" />
+							<DataGridTextColumn Width=".5*" Header="Длина" Binding="{Binding Length}" />
+						</DataGrid.Columns>
+						<DataGrid.InputBindings>
+							<MouseBinding MouseAction="LeftDoubleClick" Command="{Binding HighlightSubstringCommand}"
+										  CommandParameter="{Binding SelectedItem,
+										  RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+						</DataGrid.InputBindings>
+					</DataGrid>
+				</Grid>
+			</TabItem>
+		</TabControl>
 	</Grid>
 </Window>
