@@ -1,51 +1,27 @@
 using GUI.Models;
-using System.Text.RegularExpressions;
 
 namespace GUI.Services;
 
-public class RegexService
+public class SubstringSearchService : ISubstringSearchService
 {
 	public List<SubstringMatch> FindSubstrings(string input, SubstringTemplate template)
 	{
-		if (template == SubstringTemplate.Number)
-			return FindNumberSubstrings(input);
-
-		var result = new List<SubstringMatch>();
 		var matches = template.Template.Matches(input);
-		foreach (Match match in matches)
-		{
-			var textBeforeMatch = input[..match.Index];
-			var line = textBeforeMatch.Count(c => c == '\n') + 1;
-			var lineStart = textBeforeMatch.LastIndexOf('\n');
-			var columns = (match.Index - lineStart, match.Index - lineStart + match.Length - 1);
-
-			result.Add(new(match, line, columns));
-		}
+		var result = matches
+			.Select(m => SubstringMatch.FromInput(input, m.Index, m.Length))
+			.ToList();
 
 		return result;
 	}
 
 	public List<SubstringMatch> FindNumberSubstrings(string input)
 	{
-		var result = new NumberParser().Parse(input);
+		var result = NumberParser.Parse(input);
 		return result;
 	}
 }
 
-public static class SubstringHelper
-{
-	public static SubstringMatch FromInput(string input, string value, int index, int length)
-	{
-		var textBeforeMatch = input[..index];
-		var line = textBeforeMatch.Count(c => c == '\n') + 1;
-		var lineStart = textBeforeMatch.LastIndexOf('\n');
-		var columns = (index - lineStart, index - lineStart + length - 1);
-
-		return new(value, index, length, line, columns);
-	}
-}
-
-public class NumberParser
+public static class NumberParser
 {
 	private enum State
 	{
@@ -56,7 +32,7 @@ public class NumberParser
 		S4
 	}
 
-	public List<SubstringMatch> Parse(string input)
+	public static List<SubstringMatch> Parse(string input)
 	{
 		var matches = new List<SubstringMatch>();
 
@@ -73,21 +49,21 @@ public class NumberParser
 		return matches;
 	}
 
-	private SubstringMatch? TryParseNumber(string input, int startIndex)
+	private static SubstringMatch? TryParseNumber(string input, int startIndex)
 	{
-		State currentState = State.S0;
-		int currentPos = startIndex;
-		int numberStart = 0;
-		int lastValidEnd = 0;
+		var currentState = State.S0;
+		var currentPos = startIndex;
+		var numberStart = 0;
+		var lastValidEnd = 0;
 
 		while (currentPos < input.Length)
 		{
-			char c = input[currentPos];
+			var c = input[currentPos];
 
 			switch (currentState)
 			{
 				case State.S0:
-					if (c == '+' || c == '-')
+					if (c is '+' or '-')
 					{
 						currentState = State.S1;
 						numberStart = currentPos;
@@ -101,11 +77,8 @@ public class NumberParser
 						lastValidEnd = currentPos;
 					}
 					else
-					{
 						return null;
-					}
 					break;
-
 				case State.S1:
 					if (char.IsDigit(c))
 					{
@@ -114,11 +87,8 @@ public class NumberParser
 						lastValidEnd = currentPos;
 					}
 					else
-					{
 						return null;
-					}
 					break;
-
 				case State.S2:
 					if (char.IsDigit(c))
 					{
@@ -126,7 +96,7 @@ public class NumberParser
 						currentPos++;
 						lastValidEnd = currentPos;
 					}
-					else if (c == '.' || c == ',')
+					else if (c is '.' or ',')
 					{
 						currentState = State.S3;
 						currentPos++;
@@ -135,11 +105,9 @@ public class NumberParser
 					{
 						var index = numberStart;
 						var length = lastValidEnd - numberStart;
-						var value = input[index..(index + length)];
-						return SubstringHelper.FromInput(input, value, index, length);
+						return SubstringMatch.FromInput(input, index, length);
 					}
 					break;
-
 				case State.S3:
 					if (char.IsDigit(c))
 					{
@@ -151,11 +119,9 @@ public class NumberParser
 					{
 						var index = numberStart;
 						var length = lastValidEnd - numberStart;
-						var value = input[index..(index + length)];
-						return SubstringHelper.FromInput(input, value, index, length);
+						return SubstringMatch.FromInput(input, index, length);
 					}
 					break;
-
 				case State.S4:
 					if (char.IsDigit(c))
 					{
@@ -167,19 +133,17 @@ public class NumberParser
 					{
 						var index = numberStart;
 						var length = lastValidEnd - numberStart;
-						var value = input[index..(index + length)];
-						return SubstringHelper.FromInput(input, value, index, length);
+						return SubstringMatch.FromInput(input, index, length);
 					}
 					break;
 			}
 		}
 
-		if (currentState == State.S2 || currentState == State.S4)
+		if (currentState is State.S2 or State.S4)
 		{
 			var index = numberStart;
 			var length = lastValidEnd - numberStart;
-			var value = input[index..(index + length)];
-			return SubstringHelper.FromInput(input, value, index, length);
+			return SubstringMatch.FromInput(input, index, length);
 		}
 
 		return null;

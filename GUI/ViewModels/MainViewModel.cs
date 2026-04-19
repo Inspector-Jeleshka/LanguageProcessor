@@ -17,6 +17,7 @@ public partial class MainViewModel : ObservableObject
 	private readonly IFileDialogService _fileDialogService;
 	private readonly IDocumentService _documentService;
 	private readonly IWindowService _windowService;
+	private readonly ISubstringSearchService _substringSearchService;
 
 	private string _currentFilePath = string.Empty;
 	private string _savedContent = string.Empty;
@@ -28,7 +29,6 @@ public partial class MainViewModel : ObservableObject
 	public ObservableCollection<LexemeInfo> Lexemes { get; } = new();
 	public SubstringTemplate SelectedTemplate { get; set; } = SubstringTemplate.Number;
 	public ObservableCollection<SubstringMatch> FoundSubstrings { get; } = new();
-	public SubstringMatch? SelectedSubstring { get; set; }
 
 	public ICommand SaveDocumentAsCommand { get; }
 	public ICommand AboutCommand { get; }
@@ -39,12 +39,14 @@ public partial class MainViewModel : ObservableObject
 	public event Action<TextPointer, TextPointer>? SelectionChangeRequested;
 
 	public MainViewModel(IFileService fileService, IFileDialogService fileDialogService,
-		IDocumentService documentService, IWindowService windowService)
+		IDocumentService documentService, IWindowService windowService,
+		ISubstringSearchService substringSearchService)
 	{
 		_fileService = fileService;
 		_fileDialogService = fileDialogService;
 		_documentService = documentService;
 		_windowService = windowService;
+		_substringSearchService = substringSearchService;
 
 		SaveDocumentAsCommand = new RelayCommand(() => SaveDocumentAs());
 		AboutCommand = new RelayCommand(_windowService.ShowAboutWindow);
@@ -195,7 +197,7 @@ public partial class MainViewModel : ObservableObject
 	private void FindSubstrings()
 	{
 		FoundSubstrings.Clear();
-		var substrings = new RegexService().FindSubstrings(_documentService.Text, SelectedTemplate);
+		var substrings = _substringSearchService.FindSubstrings(_documentService.Text, SelectedTemplate);
 		foreach (var substring in substrings)
 			FoundSubstrings.Add(substring);
 	}

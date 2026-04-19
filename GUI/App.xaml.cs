@@ -20,6 +20,7 @@ public partial class App : Application
 		services.AddSingleton<IFileDialogService, FileDialogService>();
 		services.AddSingleton<IDocumentService, DocumentService>();
 		services.AddSingleton<IWindowService, WindowService>();
+		services.AddSingleton<ISubstringSearchService, SubstringSearchService>();
 
 		services.AddSingleton<MainViewModel>();
 

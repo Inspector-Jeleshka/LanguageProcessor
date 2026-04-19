@@ -137,8 +137,7 @@
 						<TextBlock Text="{Binding FoundSubstrings.Count}" />
 					</StackPanel>
 					<DataGrid Grid.Row="1" AutoGenerateColumns="False" ItemsSource="{Binding FoundSubstrings}" IsReadOnly="True"
-						  SelectedItem="{Binding SelectedSubstring}" CanUserReorderColumns="False"
-						  CanUserResizeColumns="False" SelectionMode="Single">
+						  CanUserReorderColumns="False" CanUserResizeColumns="False" SelectionMode="Single">
 						<DataGrid.Columns>
 							<DataGridTextColumn Width="*" Header="Найденная подстрока" Binding="{Binding Value}" />
 							<DataGridTextColumn Width=".5*" Header="Начальная позиция" Binding="{Binding Location}" />
