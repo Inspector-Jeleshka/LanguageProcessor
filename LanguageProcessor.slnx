@@ -10,4 +10,5 @@
     <Platform Solution="*|x64" Project="x64" />
   </Project>
   <Project Path="LexicalAnalyzer/LexicalAnalyzer.csproj" />
+  <Project Path="SyntaxAnalyzer/SyntaxAnalyzer.csproj" Id="a3882985-2b47-4325-9d6e-8c60512dadeb" />
 </Solution>
