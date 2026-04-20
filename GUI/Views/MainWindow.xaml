@@ -126,6 +126,16 @@
 					</DataGrid.InputBindings>
 				</DataGrid>
 			</TabItem>
+			<TabItem Header="Вывод парсера">
+				<DataGrid AutoGenerateColumns="False" IsReadOnly="True"
+						  CanUserReorderColumns="False" CanUserResizeColumns="False" SelectionMode="Single">
+					<DataGrid.Columns>
+						<DataGridTextColumn Width="*" Header="Неверный фрагмент" />
+						<DataGridTextColumn Width="*" Header="Местоположение" />
+						<DataGridTextColumn Width="*" Header="Описание ошибки" />
+					</DataGrid.Columns>
+				</DataGrid>
+			</TabItem>
 			<TabItem Header="Найденные подстроки">
 				<Grid>
 					<Grid.RowDefinitions>
