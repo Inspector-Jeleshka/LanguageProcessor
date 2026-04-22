@@ -90,7 +90,7 @@ public class Scanner
 					if (int.TryParse(word, out var intVal))
 						tokens.Add(new IntLiteral(Line, (Column - word.Length, Column - 1), intVal));
 					else
-						Errors.Add(new ScannerException(Line, (Column - word.Length, Column	- 1), $"Не удалось отсканировать число {word}"));
+						Errors.Add(new ScannerException(Line, (Column - word.Length, Column - 1), $"Не удалось отсканировать число {word}"));
 					_state = 0;
 					continue;
 				case 3:
@@ -166,7 +166,7 @@ public class Scanner
 		}
 		for (int i = 0; i < Errors.Count - 1;)
 		{
-			if (Errors[i].Line == Errors[i+1].Line && Errors[i].Columns.Item2 + 1 == Errors[i + 1].Columns.Item1)
+			if (Errors[i].Line == Errors[i + 1].Line && Errors[i].Columns.Item2 + 1 == Errors[i + 1].Columns.Item1)
 			{
 				var line = Errors[i].Line;
 				var message = "Неизвестная последовательность";
@@ -177,6 +177,10 @@ public class Scanner
 			else
 				i++;
 		}
+
+		var lastToken = tokens.Last();
+		tokens.Add(new EndOfFile(lastToken.Line, (lastToken.Columns.Item2 + 1, lastToken.Columns.Item2 + 1)));
+
 		return tokens;
 	}
 }
