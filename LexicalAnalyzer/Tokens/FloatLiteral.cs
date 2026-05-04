@@ -8,7 +8,7 @@ public class FloatLiteral(int line, (int, int) columns, float value) : IToken
 
 	public (int, int) Columns => columns;
 
-	public string Name => "вещественное без знака"; 
+	public string Name => "вещественное"; 
 	public float Value { get; } = value;
 
 	public override string ToString() => Value.ToString();

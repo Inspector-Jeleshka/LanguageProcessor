@@ -37,10 +37,15 @@ public class Scanner
 					word += symbol;
 					_state = 2;
 					break;
+				case 0 when symbol is '+' or '-':
+					word = string.Empty;
+					word += symbol;
+					_state = 5;
+					break;
 				case 0 when char.IsWhiteSpace(symbol):
 					if (symbol == '\r')
 						break;
-					_state = 5;
+					_state = 6;
 					if (symbol == '\n')
 					{
 						Column = 1;
@@ -50,19 +55,13 @@ public class Scanner
 					}
 					break;
 				case 0 when symbol == ':':
-					_state = 6;
-					break;
-				case 0 when symbol == '=':
 					_state = 7;
 					break;
-				case 0 when symbol == ';':
+				case 0 when symbol == '=':
 					_state = 8;
 					break;
-				case 0 when symbol == '+':
+				case 0 when symbol == ';':
 					_state = 9;
-					break;
-				case 0 when symbol == '-':
-					_state = 10;
 					break;
 				case 1 when char.IsLetterOrDigit(symbol):
 					word += symbol;
@@ -117,27 +116,32 @@ public class Scanner
 					_state = 0;
 					continue;
 				case 5:
+					if (char.IsDigit(symbol))
+					{
+						word += symbol;
+						_state = 2;
+					}
+					else
+					{
+						Errors.Add(new ScannerException(Line, (Column - word.Length, Column - 1), $"Не удалось отсканировать число {word}"));
+						_state = 0;
+						continue;
+					}
+					break;
+				case 6:
 					tokens.Add(new Space(Line, (Column - 1, Column - 1)));
 					_state = 0;
 					continue;
-				case 6:
+				case 7:
 					tokens.Add(new Colon(Line, (Column - 1, Column - 1)));
 					_state = 0;
 					continue;
-				case 7:
+				case 8:
 					tokens.Add(new AssignmentOperator(Line, (Column - 1, Column - 1)));
 					_state = 0;
 					continue;
-				case 8:
-					tokens.Add(new Semicolon(Line, (Column - 1, Column - 1)));
-					_state = 0;
-					continue;
 				case 9:
-					tokens.Add(new Plus(Line, (Column - 1, Column - 1)));
-					_state = 0;
-					continue;
-				case 10:
-					tokens.Add(new Minus(Line, (Column - 1, Column - 1)));
+					tokens.Add(new Semicolon(Line, (Column - 1, Column - 1)));
 					_state = 0;
 					continue;
 				default:
