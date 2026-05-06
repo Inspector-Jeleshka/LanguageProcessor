@@ -127,12 +127,12 @@
 				</DataGrid>
 			</TabItem>
 			<TabItem Header="Вывод парсера">
-				<DataGrid AutoGenerateColumns="False" IsReadOnly="True"
+				<DataGrid AutoGenerateColumns="False" IsReadOnly="True" ItemsSource="{Binding SyntaxErrors}"
 						  CanUserReorderColumns="False" CanUserResizeColumns="False" SelectionMode="Single">
 					<DataGrid.Columns>
-						<DataGridTextColumn Width="*" Header="Неверный фрагмент" />
-						<DataGridTextColumn Width="*" Header="Местоположение" />
-						<DataGridTextColumn Width="*" Header="Описание ошибки" />
+						<DataGridTextColumn Width="*" Header="Неверный фрагмент" Binding="{Binding Value}" />
+						<DataGridTextColumn Width="*" Header="Местоположение" Binding="{Binding Location}" />
+						<DataGridTextColumn Width="*" Header="Описание ошибки" Binding="{Binding Description}" />
 					</DataGrid.Columns>
 				</DataGrid>
 			</TabItem>

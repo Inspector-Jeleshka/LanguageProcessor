@@ -3,6 +3,8 @@ using CommunityToolkit.Mvvm.Input;
 using GUI.Models;
 using GUI.Services;
 using LexicalAnalyzer;
+using LexicalAnalyzer.Tokens;
+using SyntaxAnalyzer;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Windows;
@@ -22,6 +24,7 @@ public partial class MainViewModel : ObservableObject
 	private string _currentFilePath = string.Empty;
 	private string _savedContent = string.Empty;
 	private readonly Scanner _scanner = new();
+	private List<IToken> _tokens = new();
 
 	public static ImmutableList<SubstringTemplate> AllTemplates => SubstringTemplate.AllTemplates;
 
@@ -29,6 +32,7 @@ public partial class MainViewModel : ObservableObject
 	public ObservableCollection<LexemeInfo> Lexemes { get; } = new();
 	public SubstringTemplate SelectedTemplate { get; set; } = SubstringTemplate.Number;
 	public ObservableCollection<SubstringMatch> FoundSubstrings { get; } = new();
+	public ObservableCollection<SyntaxInfo> SyntaxErrors { get; } = new();
 
 	public ICommand SaveDocumentAsCommand { get; }
 	public ICommand AboutCommand { get; }
@@ -176,6 +180,7 @@ public partial class MainViewModel : ObservableObject
 	{
 		RunScanner();
 		FindSubstrings();
+		RunParser();
 	}
 
 	[RelayCommand]
@@ -184,13 +189,26 @@ public partial class MainViewModel : ObservableObject
 		Lexemes.Clear();
 
 		var content = _documentService.Text;
-		var tokens = _scanner.Scan(content);
+		_tokens = [.. _scanner.Scan(content)];
 
 		foreach (var error in _scanner.Errors)
 			Lexemes.Add(new(error));
 
-		foreach (var token in tokens)
+		foreach (var token in _tokens)
 			Lexemes.Add(new(token));
+	}
+
+	[RelayCommand]
+	private void RunParser()
+	{
+		SyntaxErrors.Clear();
+
+		var isValid = new Parser().TryParse(_tokens, out var errors);
+
+		var infos = errors.Select(e => new SyntaxInfo(e.Value, e.Line, e.Columns, e.Description));
+
+		foreach (var info in infos)
+			SyntaxErrors.Add(info);
 	}
 
 	[RelayCommand]
