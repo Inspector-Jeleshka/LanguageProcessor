@@ -1,6 +1,7 @@
+using LexicalAnalyzer;
+using LexicalAnalyzer.Tokens;
 using System.Collections.Generic;
 using System.Linq;
-using LexicalAnalyzer.Tokens;
 
 namespace SyntaxAnalyzer;
 
@@ -24,11 +25,10 @@ public record ConstState : IParserState
 {
 	public (IParserState? NextState, string? Expected) Match(IToken token)
 	{
-		if (token is Identifier)
-			return (new IdentifierState(), null);
+		if (token is Space)
+			return (new SpaceState(), null);
 
-		return (null, "ожидалось имя константы (идентификатор)");
-		//return (null, "после 'const' обязателен значащий пробел");
+		return (null, "после 'const' обязателен значащий пробел");
 	}
 }
 
@@ -106,7 +106,7 @@ public class Parser
 	{
 		Start,
 		Const,
-		//Space,
+		Space,
 		Identifier,
 		Colon,
 		F32,
@@ -129,7 +129,7 @@ public class Parser
 	{
 		StartState => ParserStateKind.Start,
 		ConstState => ParserStateKind.Const,
-		//SpaceState => ParserStateKind.Space,
+		SpaceState => ParserStateKind.Space,
 		IdentifierState => ParserStateKind.Identifier,
 		ColonState => ParserStateKind.Colon,
 		F32State => ParserStateKind.F32,
@@ -142,7 +142,7 @@ public class Parser
 	{
 		ParserStateKind.Start => new StartState(),
 		ParserStateKind.Const => new ConstState(),
-		//ParserStateKind.Space => new SpaceState(),
+		ParserStateKind.Space => new SpaceState(),
 		ParserStateKind.Identifier => new IdentifierState(),
 		ParserStateKind.Colon => new ColonState(),
 		ParserStateKind.F32 => new F32State(),
@@ -154,9 +154,8 @@ public class Parser
 	private static ParserStateKind GetRecoveryKind(ParserStateKind kind) => kind switch
 	{
 		ParserStateKind.Start => ParserStateKind.Const,
-		//ParserStateKind.Const => ParserStateKind.Space,
-		ParserStateKind.Const => ParserStateKind.Identifier,
-		//ParserStateKind.Space => ParserStateKind.Identifier,
+		ParserStateKind.Const => ParserStateKind.Space,
+		ParserStateKind.Space => ParserStateKind.Identifier,
 		ParserStateKind.Identifier => ParserStateKind.Colon,
 		ParserStateKind.Colon => ParserStateKind.F32,
 		ParserStateKind.F32 => ParserStateKind.Assignment,
@@ -165,11 +164,14 @@ public class Parser
 		_ => ParserStateKind.Start
 	};
 
+	private static bool ShouldSkipInMainLoop(IParserState state, IToken token)
+		=> token is Space && state is not ConstState;
+
 	private static string GetEofDescription(IParserState state) => state switch
 	{
 		StartState => "неожиданный конец файла, ожидалось ключевое слово 'const'",
 		ConstState => "неожиданный конец файла, выражение не завершено",
-		//SpaceState => "неожиданный конец файла, выражение не завершено",
+		SpaceState => "неожиданный конец файла, выражение не завершено",
 		IdentifierState => "неожиданный конец файла, выражение не завершено",
 		ColonState => "неожиданный конец файла, выражение не завершено",
 		F32State => "неожиданный конец файла, выражение не завершено",
@@ -199,6 +201,13 @@ public class Parser
 				var eofCost = kind == ParserStateKind.Start ? 0 : 1;
 				_costMemo[key] = eofCost;
 				return eofCost;
+			}
+
+			if (token is ErrorToken || (token is Space && kind != ParserStateKind.Const))
+			{
+				var skipCost = GetCost(tokens, kind, index + 1);
+				_costMemo[key] = skipCost;
+				return skipCost;
 			}
 
 			var state = CreateState(kind);
@@ -236,58 +245,50 @@ public class Parser
 		}
 	}
 
-	public bool TryParse(IEnumerable<IToken> tokens, out List<ParseError> errors)
+	private void Recover(IReadOnlyList<IToken> tokens, ref int i, ref IParserState state)
 	{
-		_errors.Clear();
-		_costMemo.Clear();
-		_inProgress.Clear();
+		// Защита от бесконечного цикла
+		int guard = tokens.Count * 4 + 16;
 
-		var list = tokens.ToList();
-		list.RemoveAll(token => token is Space);
-		IParserState state = new StartState();
-		int i = 0;
-
-		while (i < list.Count)
+		while (i < tokens.Count && guard-- > 0)
 		{
-			var token = list[i];
+			var token = tokens[i];
 
-			if (token is EndOfFile)
+			if (token is ErrorToken || (token is Space && state is not ConstState))
 			{
-				if (state is not StartState)
-				{
-					_errors.Add(new ParseError(
-						string.Empty,
-						token.Line,
-						token.Columns,
-						GetEofDescription(state)
-					));
-				}
-
-				break;
-			}
-
-			var (nextState, expected) = state.Match(token);
-
-			if (nextState is not null)
-			{
-				state = nextState;
 				i++;
 				continue;
 			}
 
-			_errors.Add(new ParseError(
-				token.ToString(),
-				token.Line,
-				token.Columns,
-				expected ?? "неизвестная ошибка"
-			));
+			if (token is EndOfFile)
+				return;
+
+			if (token is ErrorToken)
+			{
+				i++;
+				continue;
+			}
+
+			if (token is Space && state is not ConstState)
+			{
+				i++;
+				continue;
+			}
+
+			var (nextState, _) = state.Match(token);
+			if (nextState is not null)
+			{
+				state = nextState;
+				i++;
+				return;
+			}
 
 			var currentKind = GetKind(state);
 			var recoveryKind = GetRecoveryKind(currentKind);
 
-			int deleteCost = 1 + GetCost(list, currentKind, i + 1);
-			int replaceCost = 1 + GetCost(list, recoveryKind, i + 1);
-			int insertCost = 1 + GetCost(list, recoveryKind, i);
+			int deleteCost = 1 + GetCost(tokens, currentKind, i + 1);
+			int replaceCost = 1 + GetCost(tokens, recoveryKind, i + 1);
+			int insertCost = 1 + GetCost(tokens, recoveryKind, i);
 
 			var bestAction = RepairAction.Delete;
 			var bestCost = deleteCost;
@@ -319,6 +320,89 @@ public class Parser
 					state = CreateState(recoveryKind);
 					break;
 			}
+		}
+	}
+
+	public bool TryParse(IEnumerable<IToken> tokens, out List<ParseError> errors)
+	{
+		_errors.Clear();
+		_costMemo.Clear();
+		_inProgress.Clear();
+
+		var list = tokens.ToList();
+		IParserState state = new StartState();
+		int i = 0;
+
+		bool recoveringConst = false;
+
+		while (i < list.Count)
+		{
+			var token = list[i];
+
+			if (token is EndOfFile)
+			{
+				if (state is not StartState)
+				{
+					_errors.Add(new ParseError(
+						string.Empty,
+						token.Line,
+						token.Columns,
+						GetEofDescription(state)
+					));
+				}
+
+				break;
+			}
+
+			// После ошибки в начале выражения всё до первого пробела считаем
+			// неудачной попыткой написать const.
+			if (recoveringConst)
+			{
+				if (token is Space)
+				{
+					recoveringConst = false;
+					state = new SpaceState();
+					i++;
+				}
+				else
+				{
+					i++;
+				}
+
+				continue;
+			}
+
+			// Незначащие пробелы и ErrorToken вне const-области игнорируем.
+			if (ShouldSkipInMainLoop(state, token))
+			{
+				i++;
+				continue;
+			}
+
+			var (nextState, expected) = state.Match(token);
+
+			if (nextState is not null)
+			{
+				state = nextState;
+				i++;
+				continue;
+			}
+
+			_errors.Add(new ParseError(
+				token.ToString(),
+				token.Line,
+				token.Columns,
+				expected ?? "неизвестная ошибка"
+			));
+
+			if (state is StartState)
+			{
+				recoveringConst = true;
+				i++;
+				continue;
+			}
+
+			Recover(list, ref i, ref state);
 		}
 
 		errors = [.. _errors];

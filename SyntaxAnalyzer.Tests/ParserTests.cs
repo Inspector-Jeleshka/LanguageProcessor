@@ -1,3 +1,4 @@
+using LexicalAnalyzer;
 using LexicalAnalyzer.Tokens;
 
 namespace SyntaxAnalyzer.Tests;
@@ -44,20 +45,22 @@ public class ParserTests
 	}
 
 	[Fact]
-	public void TryParse_MissingSpace_ReturnsFalseAndSingleError()
+	public void TryParse_AdditionalSpaces_ReturnsTrueAndEmptyErrors()
 	{
 		var line = 1;
 		var columns = new InclusiveRange();
-		List<IToken> tokens = [new ConstKeyword(line, columns++),
-			new Identifier(line, columns++, "a"), new Colon(line, columns++), new F32Keyword(line, columns++),
-			new AssignmentOperator(line, columns++), new FloatLiteral(line, columns++, 12.3f),
+		List<IToken> tokens = [new ConstKeyword(line, columns++), new Space(line, columns++),
+			new Identifier(line, columns++, "a"), new Colon(line, columns++),
+			new Space(line, columns++), new F32Keyword(line, columns++), new Space(line, columns++),
+			new AssignmentOperator(line, columns++), new Space(line, columns++),
+			new FloatLiteral(line, columns++, 12.3f), new Space(line, columns++),
 			new Semicolon(line, columns++), new EndOfFile(line, columns)];
 		var parser = new Parser();
 
 		var parsed = parser.TryParse(tokens, out var errors);
 
-		Assert.False(parsed);
-		Assert.Single(errors);
+		Assert.True(parsed, string.Join(";\n", errors));
+		Assert.Empty(errors);
 	}
 
 	[Fact]
@@ -125,7 +128,43 @@ public class ParserTests
 	[Fact]
 	public void TryParse_ErrorToken_ReturnsFalseAndSingleError()
 	{
+		var line = 1;
+		var columns = new InclusiveRange();
+		List<IToken> tokens = [new Identifier(line, columns++, "cont"), new ErrorToken(line, columns++, "@"), new Space(line, columns++),
+			new Identifier(line, columns++, "a"), new Colon(line, columns++), new F32Keyword(line, columns++),
+			new AssignmentOperator(line, columns++), new FloatLiteral(line, columns++, 12.3f),
+			new Semicolon(line, columns++), new EndOfFile(line, columns)];
+		var parser = new Parser();
 
+		var parsed = parser.TryParse(tokens, out var errors);
+
+		Assert.False(parsed);
+		Assert.Single(errors);
+	}
+
+	[Fact]
+	public void TryParse_ErrorTokens_ReturnsFalseAndErrors()
+	{
+		var line = 1;
+		var columns = new InclusiveRange();
+		List<IToken> tokens = [new Identifier(line, columns++, "c"), new ErrorToken(line, columns++, "@"),
+			new Identifier(line, columns++, "o"), new ErrorToken(line, columns++, "@"),
+			new Identifier(line, columns++, "ns"), new ErrorToken(line, columns++, "@"),
+			new Identifier(line, columns++, "t"),
+			new Space(line, columns++),
+			new Identifier(line, columns++, "a"), new Colon(line, columns++), new Identifier(line, columns++, "f3"),
+			new ErrorToken(line, columns++, "@@@@"), new IntLiteral(line, columns++, 2),
+			new AssignmentOperator(line, columns++), new ErrorToken(line, columns++, "12."),
+			new EndOfFile(line, columns)];
+		var parser = new Parser();
+
+		var parsed = parser.TryParse(tokens, out var errors);
+
+		Assert.False(parsed);
+		Assert.Contains("const", errors[0].Description);
+		Assert.Contains("f32", errors[1].Description);
+		Assert.Contains("число", errors[2].Description);
+		Assert.Contains("конец", errors[3].Description);
 	}
 
 	[Fact]
@@ -144,47 +183,7 @@ public class ParserTests
 
 		Assert.False(parsed);
 		Assert.Contains("const", errors[0].Description);
-		//Assert.Collection(errors, [first => Assert.Contains("const", first.Description),
-		//	second => Assert.Contains("f32", second.Description)]);
 	}
-
-	// WIP. Пересмотреть ожидаемый результат
-	//[Fact]
-	//public void TryParse_TwoIdentifiersAtTheStart_ReturnsFalseAndSingleError()
-	//{
-	//	var line = 1;
-	//	var columns = new InclusiveRange();
-	//	List<IToken> tokens = [new Identifier(line, columns++, "con"), new Identifier(line, columns++, "st"),
-	//		new Space(line, columns++), new Identifier(line, columns++, "a"), new Colon(line, columns++),
-	//		new F32Keyword(line, columns++), new AssignmentOperator(line, columns++),
-	//		new FloatLiteral(line, columns++, 12.3f), new Semicolon(line, columns++), new EndOfFile(line, columns)];
-	//	var parser = new Parser();
-
-	//	var parsed = parser.TryParse(tokens, out var errors);
-
-	//	Assert.False(parsed);
-	//	Assert.Single(errors);
-	//}
-
-	// WIP. Пересмотреть ожидаемый результат
-	//[Fact]
-	//public void TryParse_TwoAdditionalIdentifier_ReturnsFalseAndTwoErrors()
-	//{
-	//	var line = 1;
-	//	var columns = new InclusiveRange();
-	//	List<IToken> tokens = [new ConstKeyword(line, columns++), new Space(line, columns++),
-	//		new Identifier(line, columns++, "a"), new Identifier(line, columns++, "b"),
-	//		new Identifier(line, columns++, "c"), new Colon(line, columns++),
-	//		new F32Keyword(line, columns++), new AssignmentOperator(line, columns++),
-	//		new FloatLiteral(line, columns++, 12.3f), new Semicolon(line, columns++), new EndOfFile(line, columns)];
-	//	var parser = new Parser();
-
-	//	var parsed = parser.TryParse(tokens, out var errors);
-
-	//	Assert.False(parsed);
-	//	Assert.Collection(errors, [first => Assert.Contains(":", first.Description),
-	//		second => Assert.Contains("f32", second.Description)]);
-	//}
 
 	[Fact]
 	public void TryParse_MissingSemicolonBetweenStatements_ReturnsFalseAndSingleError()

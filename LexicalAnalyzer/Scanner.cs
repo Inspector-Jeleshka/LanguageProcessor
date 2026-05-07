@@ -154,8 +154,8 @@ public class Scanner
 			Column++;
 		}
 
-		for (int i = 0; i < tokens.Count;)
-		{
+		//for (int i = 0; i < tokens.Count;)
+		//{
 			//if (tokens[i] is Space && (i + 1 < tokens.Count && tokens[i + 1] is Identifier))
 			//{
 			//	var probablyConst = tokens[..i];
@@ -182,18 +182,19 @@ public class Scanner
 			//		break;
 			//	}
 			//}
-			if (i == 0 && tokens[i] is Space)
-			{
-				tokens.RemoveAt(i);
-				continue;
-			}
-			if (tokens[i] is Space && tokens[i - 1] is not ConstKeyword)
-			{
-				tokens.RemoveAt(i);
-				continue;
-			}
-			i++;
-		}
+
+			//if (i == 0 && tokens[i] is Space)
+			//{
+			//	tokens.RemoveAt(i);
+			//	continue;
+			//}
+			//if (tokens[i] is Space && tokens[i - 1] is not ConstKeyword)
+			//{
+			//	tokens.RemoveAt(i);
+			//	continue;
+			//}
+			//i++;
+		//}
 		for (int i = 0; i < Errors.Count - 1;)
 		{
 			if (Errors[i].Line == Errors[i + 1].Line && Errors[i].Columns.Item2 + 1 == Errors[i + 1].Columns.Item1)
