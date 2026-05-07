@@ -20,7 +20,7 @@ public class LexemeInfo
 		Line = token.Line;
 		Columns = token.Columns;
 	}
-	public LexemeInfo(ScannerException exception)
+	public LexemeInfo(ErrorToken exception)
 	{
 		Code = -1;
 		Type = "Ошибка";

@@ -122,6 +122,32 @@ public class ParserTests
 		Assert.Single(errors);
 	}
 
+	[Fact]
+	public void TryParse_ErrorToken_ReturnsFalseAndSingleError()
+	{
+
+	}
+
+	[Fact]
+	public void TryParse_ConstTypeAndKeywordTypo_ReturnsFalseAndErrors()
+	{
+		var line = 1;
+		var columns = new InclusiveRange();
+		List<IToken> tokens = [new Identifier(line, columns++, "cont"), new Space(line, columns++),
+			new Identifier(line, columns++, "a"), new Colon(line, columns++), new Identifier(line, columns++, "f3"),
+			new IntLiteral(line, columns++, 2),
+			new AssignmentOperator(line, columns++), new FloatLiteral(line, columns++, 12.3f),
+			new Semicolon(line, columns++), new EndOfFile(line, columns)];
+		var parser = new Parser();
+
+		var parsed = parser.TryParse(tokens, out var errors);
+
+		Assert.False(parsed);
+		Assert.Contains("const", errors[0].Description);
+		//Assert.Collection(errors, [first => Assert.Contains("const", first.Description),
+		//	second => Assert.Contains("f32", second.Description)]);
+	}
+
 	// WIP. Пересмотреть ожидаемый результат
 	//[Fact]
 	//public void TryParse_TwoIdentifiersAtTheStart_ReturnsFalseAndSingleError()

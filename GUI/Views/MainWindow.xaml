@@ -127,14 +127,29 @@
 				</DataGrid>
 			</TabItem>
 			<TabItem Header="Вывод парсера">
-				<DataGrid AutoGenerateColumns="False" IsReadOnly="True" ItemsSource="{Binding SyntaxErrors}"
+				<Grid>
+					<Grid.RowDefinitions>
+						<RowDefinition Height="Auto" />
+						<RowDefinition Height="*" />
+					</Grid.RowDefinitions>
+					<StackPanel Grid.Row="0" Orientation="Horizontal" Margin="2,2,0,2">
+						<TextBlock Text="Число ошибок: " />
+						<TextBlock Text="{Binding SyntaxErrors.Count}" />
+					</StackPanel>
+					<DataGrid Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" ItemsSource="{Binding SyntaxErrors}"
 						  CanUserReorderColumns="False" CanUserResizeColumns="False" SelectionMode="Single">
-					<DataGrid.Columns>
-						<DataGridTextColumn Width="*" Header="Неверный фрагмент" Binding="{Binding Value}" />
-						<DataGridTextColumn Width="*" Header="Местоположение" Binding="{Binding Location}" />
-						<DataGridTextColumn Width="*" Header="Описание ошибки" Binding="{Binding Description}" />
-					</DataGrid.Columns>
-				</DataGrid>
+						<DataGrid.Columns>
+							<DataGridTextColumn Width="*" Header="Неверный фрагмент" Binding="{Binding Value}" />
+							<DataGridTextColumn Width="*" Header="Местоположение" Binding="{Binding Location}" />
+							<DataGridTextColumn Width="*" Header="Описание ошибки" Binding="{Binding Description}" />
+						</DataGrid.Columns>
+						<DataGrid.InputBindings>
+							<MouseBinding MouseAction="LeftDoubleClick" Command="{Binding NavigateToErrorCommand}"
+							  CommandParameter="{Binding SelectedItem,
+							  RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+						</DataGrid.InputBindings>
+					</DataGrid>
+				</Grid>
 			</TabItem>
 			<TabItem Header="Найденные подстроки">
 				<Grid>

@@ -32,7 +32,7 @@ public partial class MainViewModel : ObservableObject
 	public ObservableCollection<LexemeInfo> Lexemes { get; } = new();
 	public SubstringTemplate SelectedTemplate { get; set; } = SubstringTemplate.Number;
 	public ObservableCollection<SubstringMatch> FoundSubstrings { get; } = new();
-	public ObservableCollection<SyntaxInfo> SyntaxErrors { get; } = new();
+	public ObservableCollection<ParseError> SyntaxErrors { get; } = new();
 
 	public ICommand SaveDocumentAsCommand { get; }
 	public ICommand AboutCommand { get; }
@@ -178,9 +178,16 @@ public partial class MainViewModel : ObservableObject
 	[RelayCommand]
 	private void RunAll()
 	{
-		RunScanner();
-		FindSubstrings();
-		RunParser();
+		try
+		{
+			RunScanner();
+			FindSubstrings();
+			RunParser();
+		}
+		catch (Exception ex)
+		{
+			MessageBox.Show($"Произошла ошибка: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+		}
 	}
 
 	[RelayCommand]
@@ -191,8 +198,8 @@ public partial class MainViewModel : ObservableObject
 		var content = _documentService.Text;
 		_tokens = [.. _scanner.Scan(content)];
 
-		foreach (var error in _scanner.Errors)
-			Lexemes.Add(new(error));
+		//foreach (var error in _scanner.Errors)
+		//	Lexemes.Add(new(error));
 
 		foreach (var token in _tokens)
 			Lexemes.Add(new(token));
@@ -205,10 +212,13 @@ public partial class MainViewModel : ObservableObject
 
 		var isValid = new Parser().TryParse(_tokens, out var errors);
 
-		var infos = errors.Select(e => new SyntaxInfo(e.Value, e.Line, e.Columns, e.Description));
+		foreach (var err in errors)
+			SyntaxErrors.Add(err);
 
-		foreach (var info in infos)
-			SyntaxErrors.Add(info);
+		//var infos = errors.Select(e => new SyntaxInfo(e.Value, e.Line, e.Columns, e.Description));
+
+		//foreach (var info in infos)
+		//	SyntaxErrors.Add(info);
 	}
 
 	[RelayCommand]
@@ -227,6 +237,19 @@ public partial class MainViewModel : ObservableObject
 			return;
 
 		var newCaretPosition = _documentService.GetTextPointerAt(lexeme.Line, lexeme.Columns.Start);
+		if (newCaretPosition is null)
+			return;
+
+		NavigateToPostionRequested?.Invoke(newCaretPosition);
+	}
+
+	[RelayCommand]
+	private void NavigateToError(ParseError? error)
+	{
+		if (error is null)
+			return;
+
+		var newCaretPosition = _documentService.GetTextPointerAt(error.Line, error.Columns.Start);
 		if (newCaretPosition is null)
 			return;
 

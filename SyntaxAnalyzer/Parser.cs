@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using LexicalAnalyzer.Tokens;
 
 namespace SyntaxAnalyzer;
@@ -22,10 +24,11 @@ public record ConstState : IParserState
 {
 	public (IParserState? NextState, string? Expected) Match(IToken token)
 	{
-		if (token is Space)
-			return (new SpaceState(), null);
+		if (token is Identifier)
+			return (new IdentifierState(), null);
 
-		return (null, "после 'const' обязателен значащий пробел");
+		return (null, "ожидалось имя константы (идентификатор)");
+		//return (null, "после 'const' обязателен значащий пробел");
 	}
 }
 
@@ -99,47 +102,158 @@ public record ParseError(string Value, int Line, (int Start, int End) Columns, s
 
 public class Parser
 {
-	private readonly List<ParseError> _errors = new();
-
-	private static IParserState GetRecoveryState(IParserState state) => state switch
+	private enum ParserStateKind
 	{
-		ConstState => new SpaceState(),
-		SpaceState => new IdentifierState(),
-		IdentifierState => new ColonState(),
-		ColonState => new F32State(),
-		F32State => new AssignmentState(),
-		AssignmentState => new NumberState(),
-		NumberState => new StartState(),
+		Start,
+		Const,
+		//Space,
+		Identifier,
+		Colon,
+		F32,
+		Assignment,
+		Number
+	}
+
+	private enum RepairAction
+	{
+		Delete,
+		Replace,
+		Insert
+	}
+
+	private readonly List<ParseError> _errors = new();
+	private readonly Dictionary<(ParserStateKind Kind, int Index), int> _costMemo = new();
+	private readonly HashSet<(ParserStateKind Kind, int Index)> _inProgress = new();
+
+	private static ParserStateKind GetKind(IParserState state) => state switch
+	{
+		StartState => ParserStateKind.Start,
+		ConstState => ParserStateKind.Const,
+		//SpaceState => ParserStateKind.Space,
+		IdentifierState => ParserStateKind.Identifier,
+		ColonState => ParserStateKind.Colon,
+		F32State => ParserStateKind.F32,
+		AssignmentState => ParserStateKind.Assignment,
+		NumberState => ParserStateKind.Number,
+		_ => ParserStateKind.Start
+	};
+
+	private static IParserState CreateState(ParserStateKind kind) => kind switch
+	{
+		ParserStateKind.Start => new StartState(),
+		ParserStateKind.Const => new ConstState(),
+		//ParserStateKind.Space => new SpaceState(),
+		ParserStateKind.Identifier => new IdentifierState(),
+		ParserStateKind.Colon => new ColonState(),
+		ParserStateKind.F32 => new F32State(),
+		ParserStateKind.Assignment => new AssignmentState(),
+		ParserStateKind.Number => new NumberState(),
 		_ => new StartState()
 	};
 
-	private static string GetEofDescription(IParserState state) => $"неожиданный конец файла, {state switch
+	private static ParserStateKind GetRecoveryKind(ParserStateKind kind) => kind switch
 	{
-		StartState => "ожидалось ключевое слово 'const'",
-		ConstState or SpaceState or IdentifierState
-			or ColonState or F32State or AssignmentState => "выражение не завершено",
-		NumberState => "ожидалась ';'",
-		_ => ""
-	}}";
+		ParserStateKind.Start => ParserStateKind.Const,
+		//ParserStateKind.Const => ParserStateKind.Space,
+		ParserStateKind.Const => ParserStateKind.Identifier,
+		//ParserStateKind.Space => ParserStateKind.Identifier,
+		ParserStateKind.Identifier => ParserStateKind.Colon,
+		ParserStateKind.Colon => ParserStateKind.F32,
+		ParserStateKind.F32 => ParserStateKind.Assignment,
+		ParserStateKind.Assignment => ParserStateKind.Number,
+		ParserStateKind.Number => ParserStateKind.Start,
+		_ => ParserStateKind.Start
+	};
 
-	private static bool CanMatch(IParserState state, IToken token)
-		=> state.Match(token).NextState is not null;
-
-	public bool TryParse(IList<IToken> tokens, out List<ParseError> errors)
+	private static string GetEofDescription(IParserState state) => state switch
 	{
-		_errors.Clear();
+		StartState => "неожиданный конец файла, ожидалось ключевое слово 'const'",
+		ConstState => "неожиданный конец файла, выражение не завершено",
+		//SpaceState => "неожиданный конец файла, выражение не завершено",
+		IdentifierState => "неожиданный конец файла, выражение не завершено",
+		ColonState => "неожиданный конец файла, выражение не завершено",
+		F32State => "неожиданный конец файла, выражение не завершено",
+		AssignmentState => "неожиданный конец файла, выражение не завершено",
+		NumberState => "неожиданный конец файла, ожидалась ';'",
+		_ => "неожиданный конец файла"
+	};
 
-		IParserState state = new StartState();
-		var skipUntilSemicolon = false;
-		var i = 0;
+	private int GetCost(IReadOnlyList<IToken> tokens, ParserStateKind kind, int index)
+	{
+		if (index >= tokens.Count)
+			return kind == ParserStateKind.Start ? 0 : 1;
 
-		while (i < tokens.Count)
+		var key = (kind, index);
+		if (_costMemo.TryGetValue(key, out var cached))
+			return cached;
+
+		if (!_inProgress.Add(key))
+			return int.MaxValue / 4;
+
+		try
 		{
-			var token = tokens[i];
+			var token = tokens[index];
 
 			if (token is EndOfFile)
 			{
-				if (!skipUntilSemicolon && state is not StartState)
+				var eofCost = kind == ParserStateKind.Start ? 0 : 1;
+				_costMemo[key] = eofCost;
+				return eofCost;
+			}
+
+			var state = CreateState(kind);
+			var (nextState, _) = state.Match(token);
+
+			int cost;
+
+			if (nextState is not null)
+			{
+				cost = GetCost(tokens, GetKind(nextState), index + 1);
+			}
+			else
+			{
+				var recoveryKind = GetRecoveryKind(kind);
+
+				int deleteCost = 1 + GetCost(tokens, kind, index + 1);
+				int replaceCost = 1 + GetCost(tokens, recoveryKind, index + 1);
+				int insertCost = 1 + GetCost(tokens, recoveryKind, index);
+
+				cost = deleteCost;
+
+				if (replaceCost < cost)
+					cost = replaceCost;
+
+				if (insertCost < cost)
+					cost = insertCost;
+			}
+
+			_costMemo[key] = cost;
+			return cost;
+		}
+		finally
+		{
+			_inProgress.Remove(key);
+		}
+	}
+
+	public bool TryParse(IEnumerable<IToken> tokens, out List<ParseError> errors)
+	{
+		_errors.Clear();
+		_costMemo.Clear();
+		_inProgress.Clear();
+
+		var list = tokens.ToList();
+		list.RemoveAll(token => token is Space);
+		IParserState state = new StartState();
+		int i = 0;
+
+		while (i < list.Count)
+		{
+			var token = list[i];
+
+			if (token is EndOfFile)
+			{
+				if (state is not StartState)
 				{
 					_errors.Add(new ParseError(
 						string.Empty,
@@ -148,18 +262,8 @@ public class Parser
 						GetEofDescription(state)
 					));
 				}
-				break;
-			}
 
-			if (skipUntilSemicolon)
-			{
-				if (token is Semicolon)
-				{
-					skipUntilSemicolon = false;
-					state = new StartState();
-				}
-				i++;
-				continue;
+				break;
 			}
 
 			var (nextState, expected) = state.Match(token);
@@ -178,36 +282,42 @@ public class Parser
 				expected ?? "неизвестная ошибка"
 			));
 
-			if (state is StartState)
+			var currentKind = GetKind(state);
+			var recoveryKind = GetRecoveryKind(currentKind);
+
+			int deleteCost = 1 + GetCost(list, currentKind, i + 1);
+			int replaceCost = 1 + GetCost(list, recoveryKind, i + 1);
+			int insertCost = 1 + GetCost(list, recoveryKind, i);
+
+			var bestAction = RepairAction.Delete;
+			var bestCost = deleteCost;
+
+			if (replaceCost < bestCost)
 			{
-				skipUntilSemicolon = true;
-				i++;
-				continue;
+				bestCost = replaceCost;
+				bestAction = RepairAction.Replace;
 			}
 
-			var nextToken = (i + 1 < tokens.Count) ? tokens[i + 1] : null;
-			var insertState = GetRecoveryState(state);
+			if (insertCost < bestCost)
+			{
+				bestCost = insertCost;
+				bestAction = RepairAction.Insert;
+			}
 
-			var deleteWorks = nextToken != null && CanMatch(state, nextToken);
-			var insertWorks = CanMatch(insertState, token);
-			var replaceWorks = nextToken != null && CanMatch(insertState, nextToken);
+			switch (bestAction)
+			{
+				case RepairAction.Delete:
+					i++;
+					break;
 
-			if (deleteWorks)
-			{
-				i++;
-			}
-			else if (insertWorks)
-			{
-				state = insertState;
-			}
-			else if (replaceWorks)
-			{
-				state = insertState;
-				i++;
-			}
-			else
-			{
-				state = insertState;
+				case RepairAction.Replace:
+					state = CreateState(recoveryKind);
+					i++;
+					break;
+
+				case RepairAction.Insert:
+					state = CreateState(recoveryKind);
+					break;
 			}
 		}
 

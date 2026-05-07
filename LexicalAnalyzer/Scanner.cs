@@ -9,7 +9,7 @@ public class Scanner
 
 	public int Line { get; private set; }
 	public int Column { get; private set; }
-	public List<ScannerException> Errors = new();
+	public List<ErrorToken> Errors = new();
 
 	public IEnumerable<IToken> Scan(string input)
 	{
@@ -89,7 +89,7 @@ public class Scanner
 					if (int.TryParse(word, out var intVal))
 						tokens.Add(new IntLiteral(Line, (Column - word.Length, Column - 1), intVal));
 					else
-						Errors.Add(new ScannerException(Line, (Column - word.Length, Column - 1), $"Не удалось отсканировать число {word}"));
+						Errors.Add(new ErrorToken(Line, (Column - word.Length, Column - 1), $"Не удалось отсканировать число {word}"));
 					_state = 0;
 					continue;
 				case 3:
@@ -100,7 +100,7 @@ public class Scanner
 					}
 					else
 					{
-						Errors.Add(new ScannerException(Line, (Column - word.Length, Column - 1), $"Не удалось отсканировать число {word}"));
+						Errors.Add(new ErrorToken(Line, (Column - word.Length, Column - 1), $"Не удалось отсканировать число {word}"));
 						_state = 0;
 						continue;
 					}
@@ -112,7 +112,7 @@ public class Scanner
 					if (float.TryParse(word, CultureInfo.InvariantCulture, out var floatVal))
 						tokens.Add(new FloatLiteral(Line, (Column - word.Length, Column - 1), floatVal));
 					else
-						Errors.Add(new ScannerException(Line, (Column - 1, Column - 1), $"Не удалось отсканировать число {word}"));
+						Errors.Add(new ErrorToken(Line, (Column - 1, Column - 1), $"Не удалось отсканировать число {word}"));
 					_state = 0;
 					continue;
 				case 5:
@@ -123,7 +123,7 @@ public class Scanner
 					}
 					else
 					{
-						Errors.Add(new ScannerException(Line, (Column - word.Length, Column - 1), $"Не удалось отсканировать число {word}"));
+						Errors.Add(new ErrorToken(Line, (Column - word.Length, Column - 1), $"Не удалось отсканировать число {word}"));
 						_state = 0;
 						continue;
 					}
@@ -145,7 +145,7 @@ public class Scanner
 					_state = 0;
 					continue;
 				default:
-					Errors.Add(new ScannerException(Line, (Column, Column), $"Неизвестный символ {symbol}"));
+					Errors.Add(new ErrorToken(Line, (Column, Column), $"Неизвестный символ {symbol}"));
 					_state = 0;
 					break;
 			}
@@ -156,6 +156,32 @@ public class Scanner
 
 		for (int i = 0; i < tokens.Count;)
 		{
+			//if (tokens[i] is Space && (i + 1 < tokens.Count && tokens[i + 1] is Identifier))
+			//{
+			//	var probablyConst = tokens[..i];
+			//	var isIdAndErrorsOnly = true;
+			//	foreach (var token in probablyConst)
+			//	{
+			//		if (token is not Identifier && token is not ErrorToken)
+			//		{
+			//			isIdAndErrorsOnly = false;
+			//			break;
+			//		}
+			//	}
+
+			//	if (isIdAndErrorsOnly)
+			//	{
+			//		var line = probablyConst[0].Line;
+			//		var start = probablyConst[0].Columns.Item1;
+			//		var end = probablyConst[^1].Columns.Item2;
+			//		var message = string.Join("", probablyConst.Select(pc => pc.ToString()));
+
+			//		var newToken = new ErrorToken(line, (start, end), message);
+			//		tokens.RemoveRange(0, i);
+			//		tokens.Insert(0, newToken);
+			//		break;
+			//	}
+			//}
 			if (i == 0 && tokens[i] is Space)
 			{
 				tokens.RemoveAt(i);
@@ -174,7 +200,7 @@ public class Scanner
 			{
 				var line = Errors[i].Line;
 				var message = "Неизвестная последовательность";
-				var newError = new ScannerException(line, (Errors[i].Columns.Item1, Errors[i + 1].Columns.Item2), message);
+				var newError = new ErrorToken(line, (Errors[i].Columns.Item1, Errors[i + 1].Columns.Item2), message);
 				Errors.RemoveAt(i + 1);
 				Errors[i] = newError;
 			}
@@ -182,8 +208,32 @@ public class Scanner
 				i++;
 		}
 
-		var lastToken = tokens.Last();
-		tokens.Add(new EndOfFile(lastToken.Line, (lastToken.Columns.Item2 + 1, lastToken.Columns.Item2 + 1)));
+		var (iToken, iError) = (0, 0);
+		while (iToken < tokens.Count && iError < Errors.Count)
+		{
+			var token = tokens[iToken];
+			var error = Errors[iError];
+
+			if (error.Line == token.Line && error.Columns.Item1 < token.Columns.Item1)
+			{
+				tokens.Insert(iToken, error);
+				iError++;
+			}
+
+			iToken++;
+		}
+		while (iError < Errors.Count)
+		{
+			tokens.Add(Errors[iError]);
+			iError++;
+		}
+
+		var lastToken = tokens.LastOrDefault();
+		if (lastToken is not null)
+			tokens.Add(new EndOfFile(lastToken.Line, (lastToken.Columns.Item2 + 1, lastToken.Columns.Item2 + 1)));
+		else
+			tokens.Add(new EndOfFile(Line, (Column, Column)));
+
 
 		return tokens;
 	}
