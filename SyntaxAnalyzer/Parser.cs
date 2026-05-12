@@ -98,7 +98,10 @@ public record NumberState : IParserState
 	}
 }
 
-public record ParseError(string Value, int Line, (int Start, int End) Columns, string Description);
+public record ParseError(string Value, int Line, (int Start, int End) Columns, string Description)
+{
+	public string Location { get; } = $"Линия {Line}, {Columns.Start}-{Columns.End}";
+}
 
 public class Parser
 {
