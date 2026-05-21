@@ -151,6 +151,28 @@
 					</DataGrid>
 				</Grid>
 			</TabItem>
+			<TabItem Header="Семантический анализ">
+				<Grid>
+					<Grid.RowDefinitions>
+						<RowDefinition Height="Auto" />
+						<RowDefinition Height="*" />
+					</Grid.RowDefinitions>
+					<StackPanel Grid.Row="0" Orientation="Horizontal" Margin="2,2,0,2">
+						<TextBlock Text="Число ошибок: " />
+						<TextBlock Text="{Binding SemanticErrors.Count}" />
+					</StackPanel>
+					<DataGrid Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" ItemsSource="{Binding SemanticErrors}"
+			  CanUserReorderColumns="False" CanUserResizeColumns="False" SelectionMode="Single">
+						<DataGrid.Columns>
+							<DataGridTextColumn Width="*" Header="Сообщение" Binding="{Binding Description}" />
+							<DataGridTextColumn Width="*" Header="Местоположение" Binding="{Binding Location}" />
+						</DataGrid.Columns>
+					</DataGrid>
+				</Grid>
+			</TabItem>
+			<TabItem Header="AST">
+				<TextBox Text="{Binding AstText}" IsReadOnly="True" />
+			</TabItem>
 			<TabItem Header="Найденные подстроки">
 				<Grid>
 					<Grid.RowDefinitions>

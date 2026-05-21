@@ -1,6 +1,9 @@
 using LexicalAnalyzer;
 using LexicalAnalyzer.Tokens;
+using SyntaxAnalyzer.Ast;
+using SyntaxAnalyzer.Semantics;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace SyntaxAnalyzer;
@@ -127,6 +130,7 @@ public class Parser
 	private readonly List<ParseError> _errors = new();
 	private readonly Dictionary<(ParserStateKind Kind, int Index), int> _costMemo = new();
 	private readonly HashSet<(ParserStateKind Kind, int Index)> _inProgress = new();
+	private readonly SymbolTable _symbols = new();
 
 	private static ParserStateKind GetKind(IParserState state) => state switch
 	{
@@ -410,5 +414,268 @@ public class Parser
 
 		errors = [.. _errors];
 		return _errors.Count == 0;
+	}
+
+	private static bool IsIgnorable(IToken token)
+		=> token is Space or ErrorToken or EndOfFile;
+
+	private static string GetTokenText(IToken token)
+	{
+		//var type = token.GetType();
+		//foreach (var propName in new[] { "Value", "Text", "Lexeme", "Name" })
+		//{
+		//	var prop = type.GetProperty(propName);
+		//	if (prop?.GetValue(token) is string s && !string.IsNullOrWhiteSpace(s))
+		//		return s;
+		//}
+
+		return token.ToString();
+	}
+
+	private static bool TryParseFloatLiteral(string text, out float value)
+	{
+		//text = text.Replace('_', ' ');
+		//text = text.Replace(" ", string.Empty);
+
+		return float.TryParse(
+			text,
+			NumberStyles.Float,
+			CultureInfo.InvariantCulture,
+			out value
+		) && !float.IsNaN(value) && !float.IsInfinity(value);
+	}
+
+	private static bool IsConstStart(IToken token) => token is ConstKeyword;
+	private static bool IsIdentifier(IToken token) => token is Identifier;
+	private static bool IsColon(IToken token) => token is Colon;
+	private static bool IsF32(IToken token) => token is F32Keyword;
+	private static bool IsAssign(IToken token) => token is AssignmentOperator;
+	private static bool IsLiteral(IToken token) => token is IntLiteral or FloatLiteral;
+	private static bool IsSemicolon(IToken token) => token is Semicolon;
+
+	private bool TryReadConstDeclaration(
+		IReadOnlyList<IToken> tokens,
+		ref int i,
+		CompilationUnitNode root,
+		List<ParseError> errors)
+	{
+		int start = i;
+
+		if (!IsConstStart(tokens[i]))
+		{
+			errors.Add(new ParseError(
+				GetTokenText(tokens[i]),
+				tokens[i].Line,
+				tokens[i].Columns,
+				"ожидалось ключевое слово 'const'"
+			));
+			i++;
+			return false;
+		}
+
+		var constToken = tokens[i++];
+		if (i >= tokens.Count || !IsIdentifier(tokens[i]))
+		{
+			var bad = i < tokens.Count ? tokens[i] : constToken;
+			errors.Add(new ParseError(
+				i < tokens.Count ? GetTokenText(bad) : string.Empty,
+				bad.Line,
+				bad.Columns,
+				"ожидалось имя константы (идентификатор)"
+			));
+			return false;
+		}
+
+		var idToken = (Identifier)tokens[i++];
+		if (i >= tokens.Count || !IsColon(tokens[i]))
+		{
+			var bad = i < tokens.Count ? tokens[i] : idToken;
+			errors.Add(new ParseError(
+				i < tokens.Count ? GetTokenText(bad) : string.Empty,
+				bad.Line,
+				bad.Columns,
+				"ожидалось двоеточие ':'"
+			));
+			return false;
+		}
+
+		i++; // ':'
+
+		if (i >= tokens.Count || !IsF32(tokens[i]))
+		{
+			var bad = i < tokens.Count ? tokens[i] : idToken;
+			errors.Add(new ParseError(
+				i < tokens.Count ? GetTokenText(bad) : string.Empty,
+				bad.Line,
+				bad.Columns,
+				"ожидался тип 'f32'"
+			));
+			return false;
+		}
+
+		i++; // f32
+
+		if (i >= tokens.Count || !IsAssign(tokens[i]))
+		{
+			var bad = i < tokens.Count ? tokens[i] : idToken;
+			errors.Add(new ParseError(
+				i < tokens.Count ? GetTokenText(bad) : string.Empty,
+				bad.Line,
+				bad.Columns,
+				"ожидался оператор присваивания '='"
+			));
+			return false;
+		}
+
+		i++; // '='
+
+		if (i >= tokens.Count || !IsLiteral(tokens[i]))
+		{
+			var bad = i < tokens.Count ? tokens[i] : idToken;
+			errors.Add(new ParseError(
+				i < tokens.Count ? GetTokenText(bad) : string.Empty,
+				bad.Line,
+				bad.Columns,
+				"инициализатор должен быть литералом"
+			));
+			return false;
+		}
+
+		var valueToken = tokens[i++];
+		var literalText = GetTokenText(valueToken);
+
+		if (valueToken is not FloatLiteral)
+		{
+			errors.Add(new ParseError(
+				literalText,
+				valueToken.Line,
+				valueToken.Columns,
+				"для типа 'f32' ожидается вещественный литерал"
+			));
+			return false;
+		}
+
+		if (!TryParseFloatLiteral(literalText, out var value))
+		{
+			errors.Add(new ParseError(
+				literalText,
+				valueToken.Line,
+				valueToken.Columns,
+				"значение выходит за пределы допустимого диапазона f32"
+			));
+			return false;
+		}
+
+		if (i >= tokens.Count || !IsSemicolon(tokens[i]))
+		{
+			var bad = i < tokens.Count ? tokens[i] : valueToken;
+			errors.Add(new ParseError(
+				i < tokens.Count ? GetTokenText(bad) : string.Empty,
+				bad.Line,
+				bad.Columns,
+				"ожидалась точка с запятой ';'"
+			));
+			return false;
+		}
+
+		var semiToken = tokens[i++];
+
+		var literalNode = new LiteralNode("FloatLiteral", literalText, value, valueToken.Line, valueToken.Columns);
+		var constNode = new ConstDeclNode(
+			GetTokenText(idToken),
+			"f32",
+			literalNode,
+			constToken.Line,
+			constToken.Columns
+		);
+
+		if (!_symbols.Declare(
+				new SymbolInfo(GetTokenText(idToken), "f32", value, idToken.Line, idToken.Columns),
+				out var duplicateError))
+		{
+			errors.Add(new ParseError(
+				GetTokenText(idToken),
+				idToken.Line,
+				idToken.Columns,
+				duplicateError
+			));
+		}
+
+		root.Add(constNode);
+		return true;
+	}
+
+	public bool TryBuildAst(IEnumerable<IToken> tokens, out AstNode? ast, out List<ParseError> errors)
+	{
+		errors = new List<ParseError>();
+		ast = null;
+		_symbols.Clear();
+
+		var list = tokens.Where(t => !IsIgnorable(t)).ToList();
+		if (list.Count == 0)
+		{
+			errors.Add(new ParseError(string.Empty, 1, (1, 1), "пустой входной поток"));
+			return false;
+		}
+
+		var root = new CompilationUnitNode(list[0].Line, list[0].Columns);
+
+		int i = 0;
+		while (i < list.Count)
+		{
+			if (!IsConstStart(list[i]))
+			{
+				errors.Add(new ParseError(
+					GetTokenText(list[i]),
+					list[i].Line,
+					list[i].Columns,
+					"ожидалось ключевое слово 'const'"
+				));
+
+				i++;
+				continue;
+			}
+
+			// Разбор одного объявления.
+			TryReadConstDeclaration(list, ref i, root, errors);
+
+			// Если после объявления остались лишние токены до следующего const,
+			// не останавливаемся, а продолжаем поиск следующего объявления.
+			while (i < list.Count && !IsConstStart(list[i]))
+			{
+				errors.Add(new ParseError(
+					GetTokenText(list[i]),
+					list[i].Line,
+					list[i].Columns,
+					"после объявления константы ожидалось следующее объявление 'const' или конец файла"
+				));
+				i++;
+			}
+		}
+
+		ast = root;
+		return errors.Count == 0;
+	}
+
+	public bool TryParseWithAst(IEnumerable<IToken> tokens, out AstNode? ast, out List<ParseError> errors)
+	{
+		_symbols.Clear();
+
+		var syntaxOk = TryParse(tokens, out var syntaxErrors);
+
+		errors = [.. syntaxErrors];
+		ast = null;
+
+		if (!syntaxOk)
+			return false;
+
+		if (!TryBuildAst(tokens, out ast, out var semanticErrors))
+		{
+			errors.AddRange(semanticErrors);
+			return false;
+		}
+
+		errors.AddRange(semanticErrors);
+		return errors.Count == 0;
 	}
 }

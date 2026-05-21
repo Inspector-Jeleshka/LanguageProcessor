@@ -5,6 +5,7 @@ using GUI.Services;
 using LexicalAnalyzer;
 using LexicalAnalyzer.Tokens;
 using SyntaxAnalyzer;
+using SyntaxAnalyzer.Ast;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Windows;
@@ -33,6 +34,10 @@ public partial class MainViewModel : ObservableObject
 	public SubstringTemplate SelectedTemplate { get; set; } = SubstringTemplate.Number;
 	public ObservableCollection<SubstringMatch> FoundSubstrings { get; } = new();
 	public ObservableCollection<ParseError> SyntaxErrors { get; } = new();
+	public ObservableCollection<ParseError> SemanticErrors { get; } = new();
+
+	[ObservableProperty]
+	private string _astText = string.Empty;
 
 	public ICommand SaveDocumentAsCommand { get; }
 	public ICommand AboutCommand { get; }
@@ -209,16 +214,26 @@ public partial class MainViewModel : ObservableObject
 	private void RunParser()
 	{
 		SyntaxErrors.Clear();
+		SemanticErrors.Clear();
 
-		var isValid = new Parser().TryParse(_tokens, out var errors);
+		var parser = new Parser();
 
-		foreach (var err in errors)
+		var isValid = parser.TryParse(_tokens, out var syntaxErrors);
+
+		foreach (var err in syntaxErrors)
 			SyntaxErrors.Add(err);
 
-		//var infos = errors.Select(e => new SyntaxInfo(e.Value, e.Line, e.Columns, e.Description));
+		if (isValid)
+		{
+			_ = parser.TryParseWithAst(_tokens, out var ast, out var semanticErrors);
 
-		//foreach (var info in infos)
-		//	SyntaxErrors.Add(info);
+			foreach (var err in semanticErrors)
+				SemanticErrors.Add(err);
+
+			if (ast is not null)
+				AstText = AstPrinter.Print(ast);
+
+		}
 	}
 
 	[RelayCommand]
