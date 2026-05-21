@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace LexicalAnalyzer.Tokens;
 
 public class FloatLiteral(int line, (int, int) columns, float value) : IToken
@@ -11,5 +13,5 @@ public class FloatLiteral(int line, (int, int) columns, float value) : IToken
 	public string Name => "вещественное"; 
 	public float Value { get; } = value;
 
-	public override string ToString() => Value.ToString();
+	public override string ToString() => Value.ToString(CultureInfo.InvariantCulture);
 }
