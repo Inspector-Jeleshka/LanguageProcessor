@@ -584,15 +584,6 @@ public class Parser
 		if (hasSemanticError)
 			return true;
 
-		var literalNode = new LiteralNode("FloatLiteral", literalText, value, valueToken.Line, valueToken.Columns);
-		var constNode = new ConstDeclNode(
-			GetTokenText(idToken),
-			"f32",
-			literalNode,
-			constToken.Line,
-			constToken.Columns
-		);
-
 		if (!_symbols.Declare(
 				new SymbolInfo(GetTokenText(idToken), "f32", value, idToken.Line, idToken.Columns),
 				out var duplicateError))
@@ -603,8 +594,19 @@ public class Parser
 				idToken.Columns,
 				duplicateError
 			));
+
+			return true;
 		}
 
+		var literalNode = new LiteralNode("FloatLiteral", literalText, value, valueToken.Line, valueToken.Columns);
+		var constNode = new ConstDeclNode(
+			GetTokenText(idToken),
+			"f32",
+			literalNode,
+			constToken.Line,
+			constToken.Columns
+		);
+		
 		root.Add(constNode);
 		return true;
 	}
