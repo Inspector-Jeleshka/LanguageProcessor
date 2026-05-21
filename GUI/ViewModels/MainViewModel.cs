@@ -215,6 +215,7 @@ public partial class MainViewModel : ObservableObject
 	{
 		SyntaxErrors.Clear();
 		SemanticErrors.Clear();
+		AstText = string.Empty;
 
 		var parser = new Parser();
 
