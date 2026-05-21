@@ -543,6 +543,7 @@ public class Parser
 
 		var valueToken = tokens[i++];
 		var literalText = GetTokenText(valueToken);
+		var hasSemanticError = false;
 
 		if (valueToken is not FloatLiteral)
 		{
@@ -552,7 +553,7 @@ public class Parser
 				valueToken.Columns,
 				"для типа 'f32' ожидается вещественный литерал"
 			));
-			return false;
+			hasSemanticError = true;
 		}
 
 		if (!TryParseFloatLiteral(literalText, out var value))
@@ -579,6 +580,9 @@ public class Parser
 		}
 
 		var semiToken = tokens[i++];
+
+		if (hasSemanticError)
+			return true;
 
 		var literalNode = new LiteralNode("FloatLiteral", literalText, value, valueToken.Line, valueToken.Columns);
 		var constNode = new ConstDeclNode(
