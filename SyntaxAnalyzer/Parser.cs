@@ -564,7 +564,7 @@ public class Parser
 				valueToken.Columns,
 				"значение выходит за пределы допустимого диапазона f32"
 			));
-			return false;
+			hasSemanticError = true;
 		}
 
 		if (i >= tokens.Count || !IsSemicolon(tokens[i]))
